@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Profile | JobApp</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-8">
+                <a href="/profile" class="flex items-center space-x-2">
+                    <div class="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                        JA
+                    </div>
+                    <span class="font-bold text-xl text-slate-900 tracking-tight">JobApp</span>
+                </a>
+                <nav class="hidden md:flex space-x-1">
+                    <a href="/profile" class="px-3 py-2 rounded-md text-sm font-semibold text-indigo-600 bg-indigo-50">
+                        Master Profile
+                    </a>
+                    <a href="/jobs" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition">
+                        Job Board
+                    </a>
+                    <a href="/h2-console" target="_blank" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center space-x-1">
+                        <span>H2 Console</span>
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    </a>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span th:if="${profile.specialization}" class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200" th:text="${profile.specialization.displayName}">
+                    Technology & IT
+                </span>
+                <div class="flex items-center space-x-2 bg-slate-100 py-1.5 px-3 rounded-full text-xs font-medium text-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span th:text="${profile.user != null ? profile.user.username : 'demo-user'}">tolu</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+        <!-- Flash Feedback Banners -->
+        <div th:if="${successMessage}" class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                <span class="text-sm font-medium" th:text="${successMessage}">Operation completed successfully!</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-emerald-500 hover:text-emerald-700">&times;</button>
+        </div>
+
+        <div th:if="${errorMessage}" class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between shadow-sm">
+            <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-rose-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                <span class="text-sm font-medium" th:text="${errorMessage}">An error occurred.</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700">&times;</button>
+        </div>
+
+        <!-- Page Header -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Master Career Profile</h1>
+                <p class="text-sm text-slate-500 mt-1">Your single source of truth for qualifications, skills, and target job preferences across industries.</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button type="button" onclick="openModal()" class="inline-flex items-center space-x-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <span>Add Resume Item</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Two-Column Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <!-- Left Column: Master Profile Details Form (5 cols) -->
+            <section class="lg:col-span-5 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+                    <h2 class="text-lg font-bold text-slate-900">Personal & Target Settings</h2>
+                    <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 font-medium">Core Info</span>
+                </div>
+
+                <form th:action="@{/profile/update}" th:object="${profile}" method="post" class="space-y-4">
+                    <input type="hidden" th:field="*{id}">
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Career Specialization (Industry) *</label>
+                        <select th:field="*{specialization}" required
+                                class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white">
+                            <option th:each="cat : ${categories}" th:value="${cat}" th:text="${cat.displayName}">
+                                Technology & IT
+                            </option>
+                        </select>
+                        <p class="text-xs text-slate-400 mt-1">Directs dynamic API job scraping and filters opportunities to your sector.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Full Legal Name *</label>
+                        <input type="text" th:field="*{fullName}" required
+                               class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                        <p th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}" class="text-xs text-rose-600 mt-1"></p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
+                        <input type="text" th:field="*{phone}" placeholder="+358 40 123 4567"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Professional Headline</label>
+                        <input type="text" th:field="*{headline}" placeholder="e.g. Backend & Cloud Software Engineer"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Executive Summary / Bio</label>
+                        <textarea th:field="*{summary}" rows="4" placeholder="Brief high-level overview of your background, strengths, and career objectives..."
+                                  class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Key Skills (Comma-separated)</label>
+                        <textarea th:field="*{skillsList}" rows="3" placeholder="e.g. Java, Spring Boot, Docker, PostgreSQL, AWS, React"
+                                  class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        <p class="text-xs text-slate-400 mt-1">Used by the matching engine and AI tailor for keyword overlap.</p>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Preferred Locations (Comma-separated)</label>
+                        <input type="text" th:field="*{preferredLocations}" placeholder="e.g. Helsinki, Espoo, Remote"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Target Roles & Domain Tags</label>
+                        <input type="text" th:field="*{preferredTags}" placeholder="e.g. Backend, Cloud, Software Engineer, Junior"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div class="pt-4">
+                        <button type="submit" class="w-full py-2.5 px-4 rounded-lg bg-slate-900 text-white font-semibold text-sm hover:bg-slate-800 transition shadow-sm">
+                            Save Profile Settings
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Right Column: Resume Building Blocks (7 cols) -->
+            <section class="lg:col-span-7 space-y-6">
+
+                <!-- Section: Work Experience -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xl">💼</span>
+                            <h2 class="text-base font-bold text-slate-900">Work Experience</h2>
+                        </div>
+                        <span class="text-xs font-medium text-slate-500" th:text="${experienceItems.size()} + ' entries'">0 entries</span>
+                    </div>
+
+                    <div th:if="${experienceItems.empty}" class="text-center py-6 text-sm text-slate-400">
+                        No work experience added yet. Click "Add Resume Item" to record past roles.
+                    </div>
+
+                    <div class="space-y-4" th:unless="${experienceItems.empty}">
+                        <div th:each="item : ${experienceItems}" class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition relative group">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-900" th:text="${item.title}">Title</h3>
+                                    <p class="text-xs font-medium text-indigo-600 mt-0.5">
+                                        <span th:text="${item.organization}">Organization</span>
+                                        <span th:if="${item.location}" th:text="' • ' + ${item.location}"> • Location</span>
+                                    </p>
+                                    <p class="text-xs text-slate-400 mt-0.5" th:text="${item.startDate} + ' — ' + ${item.endDate}">Date</p>
+                                </div>
+                                <form th:action="@{/profile/items/{id}/delete(id=${item.id})}" method="post">
+                                    <input type="hidden" name="profileId" th:value="${profile.id}">
+                                    <button type="submit" onclick="return confirm('Delete this experience item?')" class="text-slate-400 hover:text-rose-600 p-1 text-xs transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
+                            </div>
+                            <p th:if="${item.description}" class="text-xs text-slate-600 mt-2 leading-relaxed whitespace-pre-line" th:text="${item.description}"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Education -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xl">🎓</span>
+                            <h2 class="text-base font-bold text-slate-900">Education</h2>
+                        </div>
+                        <span class="text-xs font-medium text-slate-500" th:text="${educationItems.size()} + ' entries'">0 entries</span>
+                    </div>
+
+                    <div th:if="${educationItems.empty}" class="text-center py-6 text-sm text-slate-400">
+                        No education records added yet.
+                    </div>
+
+                    <div class="space-y-4" th:unless="${educationItems.empty}">
+                        <div th:each="item : ${educationItems}" class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition relative group">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-900" th:text="${item.title}">Degree</h3>
+                                    <p class="text-xs font-medium text-indigo-600 mt-0.5">
+                                        <span th:text="${item.organization}">Institution</span>
+                                        <span th:if="${item.location}" th:text="' • ' + ${item.location}"> • Location</span>
+                                    </p>
+                                    <p class="text-xs text-slate-400 mt-0.5" th:text="${item.startDate} + ' — ' + ${item.endDate}">Date</p>
+                                </div>
+                                <form th:action="@{/profile/items/{id}/delete(id=${item.id})}" method="post">
+                                    <input type="hidden" name="profileId" th:value="${profile.id}">
+                                    <button type="submit" onclick="return confirm('Delete this education item?')" class="text-slate-400 hover:text-rose-600 p-1 text-xs transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
+                            </div>
+                            <p th:if="${item.description}" class="text-xs text-slate-600 mt-2 leading-relaxed whitespace-pre-line" th:text="${item.description}"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Projects -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xl">🚀</span>
+                            <h2 class="text-base font-bold text-slate-900">Technical Projects</h2>
+                        </div>
+                        <span class="text-xs font-medium text-slate-500" th:text="${projectItems.size()} + ' entries'">0 entries</span>
+                    </div>
+
+                    <div th:if="${projectItems.empty}" class="text-center py-6 text-sm text-slate-400">
+                        No projects recorded yet.
+                    </div>
+
+                    <div class="space-y-4" th:unless="${projectItems.empty}">
+                        <div th:each="item : ${projectItems}" class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition relative group">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-900" th:text="${item.title}">Project Title</h3>
+                                    <p class="text-xs font-medium text-indigo-600 mt-0.5">
+                                        <span th:text="${item.organization}">Role / Context</span>
+                                        <span th:if="${item.location}" th:text="' • ' + ${item.location}"> • Location</span>
+                                    </p>
+                                    <p class="text-xs text-slate-400 mt-0.5" th:text="${item.startDate} + ' — ' + ${item.endDate}">Date</p>
+                                </div>
+                                <form th:action="@{/profile/items/{id}/delete(id=${item.id})}" method="post">
+                                    <input type="hidden" name="profileId" th:value="${profile.id}">
+                                    <button type="submit" onclick="return confirm('Delete this project?')" class="text-slate-400 hover:text-rose-600 p-1 text-xs transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
+                            </div>
+                            <p th:if="${item.description}" class="text-xs text-slate-600 mt-2 leading-relaxed whitespace-pre-line" th:text="${item.description}"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Certifications -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xl">📜</span>
+                            <h2 class="text-base font-bold text-slate-900">Certifications</h2>
+                        </div>
+                        <span class="text-xs font-medium text-slate-500" th:text="${certificationItems.size()} + ' entries'">0 entries</span>
+                    </div>
+
+                    <div th:if="${certificationItems.empty}" class="text-center py-6 text-sm text-slate-400">
+                        No certifications added yet.
+                    </div>
+
+                    <div class="space-y-4" th:unless="${certificationItems.empty}">
+                        <div th:each="item : ${certificationItems}" class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition relative group">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-slate-900" th:text="${item.title}">Certification</h3>
+                                    <p class="text-xs font-medium text-indigo-600 mt-0.5">
+                                        <span th:text="${item.organization}">Issuer</span>
+                                        <span th:if="${item.location}" th:text="' • ' + ${item.location}"> • Location</span>
+                                    </p>
+                                    <p class="text-xs text-slate-400 mt-0.5" th:text="${item.startDate} + ' — ' + ${item.endDate}">Date</p>
+                                </div>
+                                <form th:action="@{/profile/items/{id}/delete(id=${item.id})}" method="post">
+                                    <input type="hidden" name="profileId" th:value="${profile.id}">
+                                    <button type="submit" onclick="return confirm('Delete this certification?')" class="text-slate-400 hover:text-rose-600 p-1 text-xs transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </form>
+                            </div>
+                            <p th:if="${item.description}" class="text-xs text-slate-600 mt-2 leading-relaxed whitespace-pre-line" th:text="${item.description}"></p>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal: Add Resume Item -->
+    <div id="addItemModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full p-6 relative">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-900">Add Resume Building Block</h3>
+                <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+            </div>
+
+            <form th:action="@{/profile/items/add}" th:object="${newItem}" method="post" class="space-y-4">
+                <input type="hidden" name="profileId" th:value="${profile.id}">
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Item Category *</label>
+                    <select th:field="*{type}" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option th:each="t : ${itemTypes}" th:value="${t}" th:text="${t}">EXPERIENCE</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Title / Role / Degree *</label>
+                    <input type="text" th:field="*{title}" required placeholder="e.g. Junior Backend Developer, B.Sc. Information Tech"
+                           class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Company / Issuer</label>
+                        <input type="text" th:field="*{organization}" placeholder="e.g. Haaga-Helia, AWS"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Location</label>
+                        <input type="text" th:field="*{location}" placeholder="e.g. Helsinki, Remote"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Start Date</label>
+                        <input type="text" th:field="*{startDate}" placeholder="e.g. 2024-05"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">End Date</label>
+                        <input type="text" th:field="*{endDate}" placeholder="e.g. Present or 2024-08"
+                               class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Accomplishments / Technologies Used</label>
+                    <textarea th:field="*{description}" rows="4" placeholder="Detail your impact, responsibilities, libraries, and tools used..."
+                              class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm transition">
+                        Add to Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Minimal Modal Script -->
+    <script>
+        function openModal() {
+            document.getElementById('addItemModal').classList.remove('hidden');
+        }
+        function closeModal() {
+            document.getElementById('addItemModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

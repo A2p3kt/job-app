@@ -28,6 +28,14 @@ public interface JobPostingRepository extends CrudRepository<JobPosting, Long> {
     List<JobPosting> findByOrderByScrapedAtDesc();
 
     /**
+     * Retrieves all job postings matching a specific industry category, ordered with latest first.
+     *
+     * @param category Target industry category enum
+     * @return List of matching job postings
+     */
+    List<JobPosting> findByCategoryOrderByScrapedAtDesc(JobCategory category);
+
+    /**
      * Finds a job posting by its external identifier.
      *
      * @param externalId External source identifier
@@ -35,4 +43,3 @@ public interface JobPostingRepository extends CrudRepository<JobPosting, Long> {
      */
     Optional<JobPosting> findByExternalId(String externalId);
 }
-

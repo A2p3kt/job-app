@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -17,11 +19,12 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Represents the candidate's primary career dossier and single source of truth.
- * Owns the foreign key link to AppUser and holds personal details, summary,
- * comma-separated skills/preferences, and structured resume items.
+ * Owns the foreign key link to AppUser and holds personal details, industry specialization,
+ * summary, comma-separated skills/preferences, and structured resume items.
  */
 @Entity
 @Table(name = "master_profiles")
@@ -39,6 +42,15 @@ public class MasterProfile {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private AppUser user;
+
+    /**
+     * Primary industry specialization of the candidate (e.g. TECHNOLOGY, MARKETING, LAW_LEGAL).
+     * Used by the scraper and matching engine to curate and score relevant job opportunities.
+     */
+    @NotNull(message = "Specialization is required")
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private JobCategory specialization = JobCategory.TECHNOLOGY;
 
     @NotBlank(message = "Full name is required")
     @Column(name = "full_name", nullable = false)
@@ -83,9 +95,10 @@ public class MasterProfile {
     }
 
     /**
-     * Parameterized constructor for profile initialization without an ID.
+     * Parameterized constructor for profile initialization with explicit specialization.
      *
      * @param user               Owning AppUser
+     * @param specialization     Industry career specialization
      * @param fullName           Legal/display full name
      * @param phone              Contact telephone number
      * @param headline           Professional headline
@@ -94,9 +107,11 @@ public class MasterProfile {
      * @param preferredLocations Comma-separated preferred work locations
      * @param preferredTags      Comma-separated target role tags
      */
-    public MasterProfile(AppUser user, String fullName, String phone, String headline,
-                         String summary, String skillsList, String preferredLocations, String preferredTags) {
+    public MasterProfile(AppUser user, JobCategory specialization, String fullName, String phone,
+                         String headline, String summary, String skillsList,
+                         String preferredLocations, String preferredTags) {
         this.user = user;
+        this.specialization = (specialization != null) ? specialization : JobCategory.TECHNOLOGY;
         this.fullName = fullName;
         this.phone = phone;
         this.headline = headline;
@@ -104,6 +119,14 @@ public class MasterProfile {
         this.skillsList = skillsList;
         this.preferredLocations = preferredLocations;
         this.preferredTags = preferredTags;
+    }
+
+    /**
+     * Overloaded constructor defaulting specialization to TECHNOLOGY.
+     */
+    public MasterProfile(AppUser user, String fullName, String phone, String headline,
+                         String summary, String skillsList, String preferredLocations, String preferredTags) {
+        this(user, JobCategory.TECHNOLOGY, fullName, phone, headline, summary, skillsList, preferredLocations, preferredTags);
     }
 
     // Convenience Helper Methods
@@ -144,6 +167,14 @@ public class MasterProfile {
 
     public void setUser(AppUser user) {
         this.user = user;
+    }
+
+    public JobCategory getSpecialization() {
+        return specialization;
+    }
+
+    public void setSpecialization(JobCategory specialization) {
+        this.specialization = specialization;
     }
 
     public String getFullName() {

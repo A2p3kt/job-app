@@ -1,4 +1,4 @@
-# JobApp — Intelligent Job Discovery & AI Application Tailoring Engine
+# JobApp — Multi-Industry Job Discovery & AI Application Tailoring Engine
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.1.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
@@ -7,14 +7,20 @@
 
 ## 1. Project Overview
 
-**JobApp** is a full-stack Java Spring Boot application that serves as an automated job discovery, intelligent career matching, and AI-powered application tailoring engine.
+**JobApp** is a full-stack Java Spring Boot application that serves as an automated job discovery, intelligent career matching, and AI-powered application tailoring engine supporting candidates across **multiple fields of specialization**:
+- 💻 **Technology & IT** (`TECHNOLOGY`)
+- 📈 **Marketing & Communications** (`MARKETING`)
+- ⚖️ **Law & Legal Services** (`LAW_LEGAL`)
+- 🧹 **Service & Facility Operations** (`SERVICE_OPERATIONS` — Cleaning, Maintenance, Hospitality)
+- 💼 **Business, Administration & Finance** (`BUSINESS_FINANCE`)
+- 🏥 **Healthcare & Nursing** (`HEALTHCARE`)
 
-In today's competitive job market, candidates waste dozens of hours manually customizing resumes and cover letters for individual postings. JobApp automates and streamlines this entire workflow:
-1. **Central Master Profile:** Candidates maintain a single source of truth for their contact details, headline, executive summary, verified skills, job search preferences, and chronological building blocks (work experience, education, certifications, and projects).
-2. **Automated Job Ingestion:** Background workers periodically fetch real-world software engineering job listings from public APIs, normalize technical keywords, and store them in the database.
-3. **Two-Tier Matching Engine:** Evaluates job openings against candidate profiles using a hybrid scoring algorithm combining explicit search preferences (40%) and semantic profile background overlap (60%).
+### Core Pillars
+1. **Multi-Industry Master Profile:** Candidates choose their `JobCategory` specialization and record their contact details, headline, executive summary, verified skills, and chronological building blocks (work experience, education, certifications, and projects).
+2. **Multi-Source Autonomous Job Ingestion:** Background workers periodically fetch real-world opportunities from public, zero-auth APIs (**JobTech Nordics**, **The Muse**, **Remotive**), sanitize HTML, and tag incoming jobs using industry-specific keyword dictionaries.
+3. **Specialization-Aware Matching Engine:** Evaluates job openings against candidate profiles using a hybrid scoring algorithm combining explicit search preferences (40%) and semantic profile background overlap (60%).
 4. **AI-Powered Tailoring:** On-demand generation of targeted, high-impact **Custom CVs** and **Cover Letters** via an LLM API (Google Gemini / OpenAI), complete with a resilient offline template fallback for zero-crash grading.
-5. **Interactive Editor & Dynamic PDF Export:** Users review, edit, and fine-tune their application materials directly in an in-browser split-view workspace, then download production-ready PDF documents.
+5. **Interactive Editor & Dynamic PDF Export:** Users review, edit, and fine-tune their application materials directly in an in-browser split-view workspace, then download production-ready PDF documents via OpenPDF.
 
 ---
 
@@ -30,12 +36,13 @@ src/main/java/dev/toluwalase/jobapp/
 ├── domain/                         # Persistence & Data Contracts
 │   ├── AppUser.java                # JPA Entity: Authenticated user account
 │   ├── AppUserRepository.java      # Spring Data JPA Repository
-│   ├── MasterProfile.java          # JPA Entity: Central career profile
+│   ├── JobCategory.java            # Enum: Multi-industry specializations & dictionaries
+│   ├── MasterProfile.java          # JPA Entity: Central career profile with specialization
 │   ├── MasterProfileRepository.java
 │   ├── ProfileItem.java            # JPA Entity: Experience, Education, Projects
 │   ├── ProfileItemType.java        # Enum: EXPERIENCE, EDUCATION, CERTIFICATION, PROJECT
 │   ├── ProfileItemRepository.java
-│   ├── JobPosting.java             # JPA Entity: Ingested job listings
+│   ├── JobPosting.java             # JPA Entity: Ingested job listings with category
 │   ├── JobPostingRepository.java
 │   ├── ApplicationKit.java         # JPA Entity: Tailored CV/Cover letter artifacts
 │   ├── ApplicationKitRepository.java
@@ -43,7 +50,7 @@ src/main/java/dev/toluwalase/jobapp/
 │
 ├── service/                        # Business Logic & External Integrations
 │   ├── ProfileService.java         # Profile & resume item management
-│   ├── JobScraperService.java      # Scheduled & manual external job ingestion
+│   ├── JobScraperService.java      # Scheduled & manual multi-source job ingestion
 │   ├── MatchingEngineService.java  # Two-tier 40/60 scoring engine
 │   ├── TailoringService.java       # LLM generation with offline template fallback
 │   └── PdfExportService.java       # OpenPDF document renderer
@@ -65,11 +72,12 @@ src/main/java/dev/toluwalase/jobapp/
 
 - **Language & Runtime:** Java 21 (LTS)
 - **Framework:** Spring Boot 4.1.2 (Web MVC, Data JPA, Validation, DevTools)
-- **Templating & UI:** Thymeleaf, HTML5, CSS3, Modern Responsive UI (Tailwind CSS / Bootstrap)
-- **Database (Development):** In-Memory H2 Database (`jdbc:h2:mem:jobappdb` / `jobforgedb`) with H2 Web Console
+- **Templating & UI:** Thymeleaf, HTML5, CSS3, Modern Responsive UI (Tailwind CSS CDN)
+- **Database (Development):** In-Memory H2 Database (`jdbc:h2:mem:jobappdb`) with H2 Web Console
 - **Database (Production / Grade 5):** PostgreSQL (`org.postgresql.Driver`)
 - **PDF Generation:** OpenPDF (`com.github.librepdf:openpdf`)
-- **External API & LLM:** Spring `RestClient` (calling Remotive/JobTech APIs and Google Gemini/OpenAI API)
+- **External Public APIs:** JobTech Nordics API, The Muse API, Remotive API
+- **AI / LLM Integration:** Spring `RestClient` (calling Google Gemini / OpenAI API with deterministic offline fallback)
 - **Testing:** JUnit 5, Mockito, Spring Boot Test (`@SpringBootTest`, `@DataJpaTest`, `@WebMvcTest`)
 - **Build Tool:** Maven
 
@@ -111,8 +119,8 @@ The in-memory database console is available during development:
 - [x] **Strict 3-Package Architecture:** Enforces separation of concerns (`domain`, `service`, `web`).
 - [x] **No Lombok:** Handwritten, clean, standard constructors, getters, and setters.
 - [x] **Comprehensive Documentation:** Full Javadoc on all classes and methods.
-- [ ] **Spring Security:** Local BCrypt authentication + OAuth2 social login (GitHub/Google).
-- [ ] **Automated Scheduling:** Hourly `@Scheduled` background worker for job ingestion with manual trigger.
+- [ ] **Multi-Industry Specialization:** Support for Tech, Marketing, Legal, Operations/Cleaning, Finance, and Healthcare.
+- [ ] **Multi-Source Scheduled Scraper:** Hourly background ingestion from JobTech Nordics, The Muse, and Remotive with manual trigger.
 - [ ] **Two-Tier Matching Algorithm:** 40% preference overlap + 60% semantic profile evidence score.
 - [ ] **Dual-Mode AI Tailoring:** Live LLM integration via `RestClient` + deterministic offline template fallback.
 - [ ] **Dynamic PDF Generation:** On-the-fly binary rendering of tailored CVs and cover letters.

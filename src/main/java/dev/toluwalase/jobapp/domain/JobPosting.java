@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -12,8 +14,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * Represents an indexed tech job opening in the central repository.
- * Populated automatically via scheduled external API scraping or manual test seeding.
+ * Represents an indexed job opening across any supported industry category.
+ * Populated automatically via scheduled multi-source API scraping or manual test seeding.
  */
 @Entity
 @Table(name = "job_postings")
@@ -24,12 +26,20 @@ public class JobPosting {
     private Long id;
 
     /**
-     * Unique identifier provided by the external API/source (e.g., Remotive job ID).
+     * Unique identifier provided by the external API/source (e.g., JobTech ID, Remotive ID).
      * Prevents duplicate insertions across recurring scraping runs.
      */
     @NotNull(message = "External ID is required")
     @Column(name = "external_id", nullable = false, unique = true)
     private String externalId;
+
+    /**
+     * Industry vertical specialization category (e.g. TECHNOLOGY, LAW_LEGAL, SERVICE_OPERATIONS).
+     */
+    @NotNull(message = "Job category is required")
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private JobCategory category = JobCategory.TECHNOLOGY;
 
     @NotBlank(message = "Job title is required")
     @Column(nullable = false)
@@ -45,7 +55,7 @@ public class JobPosting {
     private String location;
 
     /**
-     * Complete job description containing role responsibilities and requirements.
+     * Complete job description containing role responsibilities and requirements (HTML sanitized).
      */
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -63,7 +73,7 @@ public class JobPosting {
     private String sourceUrl;
 
     /**
-     * Name of the data source provider (e.g., "Remotive", "JobTech", "ManualSeed").
+     * Name of the data source provider (e.g., "JobTech", "TheMuse", "Remotive", "ManualSeed").
      */
     @Column(name = "source_name")
     private String sourceName;
@@ -81,9 +91,10 @@ public class JobPosting {
     }
 
     /**
-     * Parameterized constructor for creating a new JobPosting without an ID.
+     * Parameterized constructor for creating a new JobPosting with explicit category.
      *
      * @param externalId    Unique external identifier
+     * @param category      Industry specialization category
      * @param title         Job title
      * @param company       Hiring company
      * @param location      Job location or remote status
@@ -93,10 +104,11 @@ public class JobPosting {
      * @param sourceName    Provider identifier
      * @param scrapedAt     Ingestion timestamp
      */
-    public JobPosting(String externalId, String title, String company, String location,
-                      String description, String extractedTags, String sourceUrl,
-                      String sourceName, LocalDateTime scrapedAt) {
+    public JobPosting(String externalId, JobCategory category, String title, String company,
+                      String location, String description, String extractedTags,
+                      String sourceUrl, String sourceName, LocalDateTime scrapedAt) {
         this.externalId = externalId;
+        this.category = (category != null) ? category : JobCategory.TECHNOLOGY;
         this.title = title;
         this.company = company;
         this.location = location;
@@ -105,6 +117,15 @@ public class JobPosting {
         this.sourceUrl = sourceUrl;
         this.sourceName = sourceName;
         this.scrapedAt = scrapedAt;
+    }
+
+    /**
+     * Overloaded constructor defaulting category to TECHNOLOGY.
+     */
+    public JobPosting(String externalId, String title, String company, String location,
+                      String description, String extractedTags, String sourceUrl,
+                      String sourceName, LocalDateTime scrapedAt) {
+        this(externalId, JobCategory.TECHNOLOGY, title, company, location, description, extractedTags, sourceUrl, sourceName, scrapedAt);
     }
 
     // Getters and Setters
@@ -123,6 +144,14 @@ public class JobPosting {
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
+    }
+
+    public JobCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(JobCategory category) {
+        this.category = category;
     }
 
     public String getTitle() {
@@ -189,4 +218,3 @@ public class JobPosting {
         this.scrapedAt = scrapedAt;
     }
 }
-
