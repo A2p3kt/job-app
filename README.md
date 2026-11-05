@@ -100,7 +100,7 @@ src/main/java/dev/toluwalase/jobapp/
 The in-memory database console is available during development:
 - **URL:** [http://localhost:8080/h2-console](http://localhost:8080/h2-console)
 - **Driver Class:** `org.h2.Driver`
-- **JDBC URL:** `jdbc:h2:mem:jobforgedb` (or `jdbc:h2:mem:jobappdb`)
+- **JDBC URL:** `jdbc:h2:mem:jobappdb`
 - **Username:** `sa`
 - **Password:** *(leave blank)*
 

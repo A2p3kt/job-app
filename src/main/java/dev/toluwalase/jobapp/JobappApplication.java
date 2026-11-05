@@ -1,5 +1,8 @@
 package dev.toluwalase.jobapp;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -9,6 +12,8 @@ import org.springframework.context.annotation.Bean;
 
 import dev.toluwalase.jobapp.domain.AppUser;
 import dev.toluwalase.jobapp.domain.AppUserRepository;
+import dev.toluwalase.jobapp.domain.JobPosting;
+import dev.toluwalase.jobapp.domain.JobPostingRepository;
 import dev.toluwalase.jobapp.domain.MasterProfile;
 import dev.toluwalase.jobapp.domain.MasterProfileRepository;
 import dev.toluwalase.jobapp.domain.ProfileItem;
@@ -29,20 +34,22 @@ public class JobappApplication {
     }
 
     /**
-     * Seeds initial development data (AppUser, MasterProfile, and ProfileItems) into H2 on startup.
+     * Seeds initial development data (AppUser, MasterProfile, ProfileItems, and JobPostings) into H2 on startup.
      *
      * @param userRepository    Repository for AppUser persistence
      * @param profileRepository Repository for MasterProfile persistence
      * @param itemRepository    Repository for ProfileItem persistence
+     * @param jobRepository     Repository for JobPosting persistence
      * @return CommandLineRunner callback
      */
     @Bean
     public CommandLineRunner demoData(AppUserRepository userRepository,
                                       MasterProfileRepository profileRepository,
-                                      ProfileItemRepository itemRepository) {
+                                      ProfileItemRepository itemRepository,
+                                      JobPostingRepository jobRepository) {
         return (args) -> {
+            // 1. Seed Demo User & Career Profile
             if (userRepository.count() == 0) {
-                // 1. Create and save the user account
                 AppUser demoUser = new AppUser(
                         "tolu",
                         "hello@toluwalase.dev",
@@ -52,7 +59,6 @@ public class JobappApplication {
                 );
                 userRepository.save(demoUser);
 
-                // 2. Create the linked MasterProfile
                 MasterProfile demoProfile = new MasterProfile(
                         demoUser,
                         "Toluwalase Ayoola",
@@ -64,7 +70,6 @@ public class JobappApplication {
                         "Backend, Software Engineer, Cloud, Intern, Junior"
                 );
 
-                // 3. Seed realistic ProfileItems (Experience, Education, Certification, Project)
                 demoProfile.addItem(new ProfileItem(
                         demoProfile,
                         ProfileItemType.EXPERIENCE,
@@ -113,6 +118,70 @@ public class JobappApplication {
 
                 log.info("Seeded AppUser (ID: {}), MasterProfile (ID: {}), and {} ProfileItems into H2!",
                         demoUser.getId(), demoProfile.getId(), itemRepository.count());
+            }
+
+            // 2. Seed Sample Job Postings
+            if (jobRepository.count() == 0) {
+                List<JobPosting> sampleJobs = List.of(
+                        new JobPosting(
+                                "seed-job-001",
+                                "Junior Backend Developer",
+                                "Nordic Financial Technologies",
+                                "Helsinki, Finland (Hybrid)",
+                                "We are seeking an enthusiastic Junior Backend Developer to join our core platform engineering team in Helsinki. You will build and scale resilient RESTful APIs in Java 21 and Spring Boot, interact with PostgreSQL transactional databases using Spring Data JPA, and package services into Docker containers. Mentorship provided by senior architects.",
+                                "Java, Spring Boot, PostgreSQL, Docker, REST, Git, Microservices",
+                                "https://nordicfintech.example.com/careers/backend-dev",
+                                "SeedData",
+                                LocalDateTime.now().minusHours(2)
+                        ),
+                        new JobPosting(
+                                "seed-job-002",
+                                "Cloud Infrastructure & DevOps Engineer",
+                                "Aura Cloud Solutions",
+                                "Espoo, Finland",
+                                "Aura Cloud is looking for a Cloud Infrastructure Engineer to design, deploy, and maintain automated AWS architectures. Requirements include strong Linux foundations, hands-on containerization experience with Docker, scripting proficiency in Python or Bash, and knowledge of modern CI/CD pipelines. AWS certifications (Practitioner or Solutions Architect) are considered a significant advantage.",
+                                "AWS, Docker, Linux, Python, Terraform, CI/CD, Cloud, Git",
+                                "https://auracloud.example.com/jobs/cloud-engineer",
+                                "SeedData",
+                                LocalDateTime.now().minusHours(5)
+                        ),
+                        new JobPosting(
+                                "seed-job-003",
+                                "Full-Stack Software Engineer (Java & React)",
+                                "Kide Health Innovations",
+                                "Remote (Finland / EU)",
+                                "Join our mission-driven digital health startup as a Full-Stack Engineer. In this role, you will implement client-facing interfaces with React and TypeScript while extending reliable enterprise backend services built on Spring Boot and PostgreSQL. Experience with Docker and microservice patterns is required.",
+                                "Java, Spring Boot, React, TypeScript, Docker, PostgreSQL, REST",
+                                "https://kidehealth.example.com/careers/fullstack",
+                                "SeedData",
+                                LocalDateTime.now().minusHours(8)
+                        ),
+                        new JobPosting(
+                                "seed-job-004",
+                                "Python Data Platform Developer",
+                                "Baltic Insights Oy",
+                                "Helsinki, Finland",
+                                "Baltic Insights is hiring a Python Developer to join our analytics pipeline team. You will craft scalable ingestion workflows using Python, Django REST Framework, and AWS Lambda serverless functions, connected to PostgreSQL databases. Ideal candidates possess a strong grasp of relational database design, clean coding habits, and Docker deployment workflows.",
+                                "Python, Django, PostgreSQL, Docker, AWS Lambda, REST, SQL",
+                                "https://balticinsights.example.com/careers/python-developer",
+                                "SeedData",
+                                LocalDateTime.now().minusHours(12)
+                        ),
+                        new JobPosting(
+                                "seed-job-005",
+                                "Embedded Systems Firmware Engineer",
+                                "Polar Robotics Oy",
+                                "Tampere, Finland",
+                                "Polar Robotics designs autonomous industrial navigation units. We are looking for an Embedded Systems Engineer proficient in modern C++ and C to develop real-time firmware for microcontroller hardware and low-power telemetry sensors. Experience with FreeRTOS and oscilloscope debugging required.",
+                                "C++, Embedded, RTOS, Hardware, Robotics, C",
+                                "https://polarrobotics.example.com/careers/embedded-engineer",
+                                "SeedData",
+                                LocalDateTime.now().minusHours(24)
+                        )
+                );
+
+                jobRepository.saveAll(sampleJobs);
+                log.info("Seeded {} sample JobPostings into H2!", jobRepository.count());
             }
         };
     }
