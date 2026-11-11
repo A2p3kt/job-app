@@ -118,6 +118,16 @@ public class MatchingEngineService {
         Set<String> rationale = new LinkedHashSet<>();
 
         // -------------------------------------------------------------
+        // Specialization Alignment & Status
+        // -------------------------------------------------------------
+        boolean isSpecializationMatch = (job.getCategory() == profile.getSpecialization());
+        if (isSpecializationMatch) {
+            rationale.add("Specialization Match: " + job.getCategory().getDisplayName());
+        } else {
+            rationale.add("Cross-Industry Opportunity (" + job.getCategory().getDisplayName() + ")");
+        }
+
+        // -------------------------------------------------------------
         // TIER 1: Candidate Preference Alignment (Max 40 points)
         // -------------------------------------------------------------
         int locationScore = scoreLocationPreference(profile, job, rationale);
@@ -133,17 +143,12 @@ public class MatchingEngineService {
 
         int rawCompositeScore = tier1Score + tier2Score;
 
-        // -------------------------------------------------------------
-        // Specialization Alignment & Cross-Industry Penalty
-        // -------------------------------------------------------------
         int finalScore;
-        if (job.getCategory() == profile.getSpecialization()) {
+        if (isSpecializationMatch) {
             finalScore = rawCompositeScore;
-            rationale.add("Specialization Match: " + job.getCategory().getDisplayName());
         } else {
             // Apply 40% penalty for jobs outside the candidate's active specialization vertical
             finalScore = (int) Math.round(rawCompositeScore * 0.60);
-            rationale.add("Cross-Industry Opportunity (" + job.getCategory().getDisplayName() + ")");
         }
 
         finalScore = Math.max(0, Math.min(100, finalScore));
@@ -349,7 +354,17 @@ public class MatchingEngineService {
                         rationale.add("Experience: " + item.getTitle());
                     }
                 } else if (item.getType() == ProfileItemType.CERTIFICATION) {
-                    if (jobDesc.contains(itemTitle) || jobTitle.contains(itemTitle) || jobTags.contains(itemTitle)) {
+                    boolean certMatches = false;
+                    if (!jobTags.isBlank()) {
+                        for (String tag : jobTags.split(",")) {
+                            String t = tag.trim();
+                            if (!t.isBlank() && itemTitle.contains(t)) {
+                                certMatches = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (certMatches || jobDesc.contains(itemTitle) || jobTitle.contains(itemTitle)) {
                         score += 5;
                         rationale.add("Certification: " + item.getTitle());
                     }
