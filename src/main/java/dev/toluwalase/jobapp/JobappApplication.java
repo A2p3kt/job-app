@@ -10,6 +10,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.web.client.RestClient;
+
+import tools.jackson.databind.ObjectMapper;
+
 import dev.toluwalase.jobapp.domain.AppUser;
 import dev.toluwalase.jobapp.domain.AppUserRepository;
 import dev.toluwalase.jobapp.domain.JobCategory;
@@ -26,12 +31,33 @@ import dev.toluwalase.jobapp.domain.ProfileItemType;
  * Contains startup seeding for development in H2 across all supported industry categories.
  */
 @SpringBootApplication
+@EnableScheduling
 public class JobappApplication {
 
     private static final Logger log = LoggerFactory.getLogger(JobappApplication.class);
 
     public static void main(String[] args) {
         SpringApplication.run(JobappApplication.class, args);
+    }
+
+    /**
+     * Configures a default RestClient.Builder bean for web requests and API scrapers.
+     *
+     * @return RestClient.Builder instance
+     */
+    @Bean
+    public RestClient.Builder restClientBuilder() {
+        return RestClient.builder();
+    }
+
+    /**
+     * Configures an ObjectMapper bean for JSON parsing.
+     *
+     * @return ObjectMapper instance
+     */
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 
     /**
