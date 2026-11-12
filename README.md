@@ -251,7 +251,68 @@ Every point awarded generates human-readable rationale pills displayed directly 
 
 ---
 
-## 6. Getting Started
+## 6. AI Application Tailoring & Dynamic PDF Export (Milestone 5)
+
+JobApp provides an automated application workshop that creates personalized CVs and cover letters targeted at specific job openings, complete with side-by-side editing and instantaneous PDF generation.
+
+```
+       [ Candidate Profile ]               [ Job Posting ]
+                 │                                │
+                 └───────────────┬────────────────┘
+                                 ▼
+                         TailoringService
+                 ┌───────────────┴───────────────┐
+                 │                               │
+        (API Key Available)             (No Key / Offline)
+                 │                               │
+                 ▼                               ▼
+         Live Gemini LLM            Deterministic Fallback
+      (gemini-1.5-flash API)        (Candidate Data + Tags)
+                 │                               │
+                 └───────────────┬───────────────┘
+                                 ▼
+                     ApplicationKit Entity
+                 (tailoredCvContent, tailoredLetter)
+                                 │
+                 ┌───────────────┴───────────────┐
+                 ▼                               ▼
+       Split-Screen Workspace             PdfExportService
+         (/kits/{id}/edit)                   (OpenPDF)
+                 │                               │
+       Interactive HTML Editor           Downloadable PDF Stream
+         (Save Draft Edits)         (/kits/{id}/pdf/cv & /cover-letter)
+```
+
+### 6.1 Dual-Mode Tailoring Architecture (`TailoringService`)
+
+To balance cutting-edge AI capabilities with 100% test reliability and zero-crash evaluation, the `TailoringService` implements a dual-mode generation strategy:
+
+1. **Live Gemini LLM Inference Mode:**
+   - Active when `${gemini.api.key}` or `GEMINI_API_KEY` is present.
+   - Dispatches a prompt structured with candidate experience, skills, specialization context, and target job description to `gemini-1.5-flash` via Spring `RestClient`.
+   - Generates customized ATS-friendly Markdown CVs and formal business cover letters separated by `===COVER_LETTER===`.
+2. **Deterministic Offline Template Mode (Zero-Crash Fallback):**
+   - Active when no API key is set or when external network calls fail.
+   - Synthesizes structured markdown CVs and formal letters directly from `MasterProfile` items (`EXPERIENCE`, `EDUCATION`, `CERTIFICATION`, `PROJECT`) and the job's `extractedTags`.
+   - Caches generated kits by `(userId, jobId)` in `ApplicationKitRepository` so previous revisions are preserved.
+
+### 6.2 Split-Screen Workspace UI (`kit-editor.html`)
+
+Accessing `/kits/{kitId}/edit` opens a split-screen editor:
+- **Left Column:** Target job requirements, company details, location, category pill, 0–100 match score breakdown, rationale pills, and full job description.
+- **Right Column:** Tabbed interface switching between **Tailored CV (Markdown)** and **Tailored Cover Letter (Business Correspondence)** with live inline text editing.
+- **Action Toolbar:** One-click save (`POST /kits/{kitId}/save`) with flash feedback and instant PDF export buttons.
+
+### 6.3 Dynamic PDF Export (`PdfExportService`)
+
+Built with OpenPDF (`com.github.librepdf:openpdf`), `PdfExportService` converts draft text directly into downloadable binary PDF streams:
+- `GET /kits/{kitId}/pdf/cv`: Generates a clean A4 curriculum vitae with section dividers, bulleted skills, bold job titles, and italicized dates.
+- `GET /kits/{kitId}/pdf/cover-letter`: Formats a formal business letter with date header, recipient address block, salutation, justified body paragraphs, and candidate signature block.
+- Streams responses with `Content-Type: application/pdf` and sanitized filename headers (e.g. `attachment; filename="CV-Senior_Java_Developer.pdf"`).
+
+---
+
+## 7. Getting Started
 
 ### Prerequisites
 - Java 21 SDK installed (`java -version`)
@@ -260,7 +321,7 @@ Every point awarded generates human-readable rationale pills displayed directly 
 ### Running the Application Locally
 1. Clone the repository and navigate to the project directory:
    ```bash
-   cd c:\Users\toluw\Kitchen\jobapp
+   cd /home/zappy/Work/job-app
    ```
 2. Build the project:
    ```bash
@@ -282,7 +343,7 @@ The in-memory database console is available during development:
 
 ---
 
-## 7. Course & Grading Compliance (Grade 5 Target)
+## 8. Course & Grading Compliance (Grade 5 Target)
 
 - [x] **Strict 3-Package Architecture:** Enforces separation of concerns (`domain`, `service`, `web`).
 - [x] **No Lombok:** Handwritten, clean, standard constructors, getters, and setters.
@@ -290,7 +351,7 @@ The in-memory database console is available during development:
 - [x] **Multi-Industry Specialization:** Support for Tech, Marketing, Legal, Operations/Cleaning, Finance, and Healthcare.
 - [x] **Multi-Source Scheduled Scraper:** Hourly background ingestion from JobTech Nordics, The Muse, Remotive, and Arbeitnow with manual trigger.
 - [x] **Two-Tier Matching Algorithm:** 40% preference overlap + 60% semantic profile evidence score.
-- [ ] **Dual-Mode AI Tailoring:** Live LLM integration via `RestClient` + deterministic offline template fallback.
-- [ ] **Dynamic PDF Generation:** On-the-fly binary rendering of tailored CVs and cover letters.
+- [x] **Dual-Mode AI Tailoring:** Live LLM integration via `RestClient` + deterministic offline template fallback.
+- [x] **Dynamic PDF Generation:** On-the-fly binary rendering of tailored CVs and cover letters via OpenPDF.
 - [ ] **Dual Web + REST Architecture:** Thymeleaf server-rendered interface alongside `/api/v1/**` REST API.
 - [ ] **Automated Test Suite:** Unit tests for matching algorithms, Mockito mocks for external APIs, and JPA slice tests.
