@@ -34,3 +34,5 @@ build/
 AGENT.md
 PLAN.md
 PROJECT_SPEC.md
+
+.env
