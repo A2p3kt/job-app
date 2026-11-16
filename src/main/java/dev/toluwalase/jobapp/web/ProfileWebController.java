@@ -19,6 +19,7 @@ import dev.toluwalase.jobapp.domain.MasterProfile;
 import dev.toluwalase.jobapp.domain.ProfileItem;
 import dev.toluwalase.jobapp.domain.ProfileItemType;
 import dev.toluwalase.jobapp.service.ProfileService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 
 /**
@@ -51,17 +52,28 @@ public class ProfileWebController {
         return "redirect:/profile";
     }
 
+    private String resolveUsername(Principal principal, HttpSession session) {
+        if (principal != null && principal.getName() != null && !principal.getName().isBlank()) {
+            return principal.getName();
+        }
+        if (session != null && session.getAttribute("username") != null) {
+            return (String) session.getAttribute("username");
+        }
+        return "tolu";
+    }
+
     /**
      * Displays the Master Profile form, specialization selector, categorized items, and add-item modal.
      * Resolves the authenticated user, or falls back to the default seed user ("tolu") during development.
      *
      * @param model     Spring MVC Model for UI data binding
-     * @param principal Current authenticated user principal (nullable prior to Milestone 6)
+     * @param principal Current authenticated user principal
+     * @param session   Current HTTP session for session-based authentication
      * @return Template view name "profile"
      */
     @GetMapping("/profile")
-    public String showProfile(Model model, Principal principal) {
-        String username = (principal != null) ? principal.getName() : "tolu";
+    public String showProfile(Model model, Principal principal, HttpSession session) {
+        String username = resolveUsername(principal, session);
         MasterProfile profile = profileService.getOrCreateProfile(username);
 
         model.addAttribute("profile", profile);
@@ -93,9 +105,10 @@ public class ProfileWebController {
                                 BindingResult bindingResult,
                                 RedirectAttributes redirectAttributes,
                                 Model model,
-                                Principal principal) {
+                                Principal principal,
+                                HttpSession session) {
         if (bindingResult.hasErrors()) {
-            String username = (principal != null) ? principal.getName() : "tolu";
+            String username = resolveUsername(principal, session);
             MasterProfile existing = profileService.getOrCreateProfile(username);
 
             model.addAttribute("categories", JobCategory.values());

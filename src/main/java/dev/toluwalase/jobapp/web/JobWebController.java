@@ -20,6 +20,7 @@ import dev.toluwalase.jobapp.domain.MasterProfile;
 import dev.toluwalase.jobapp.service.JobScraperService;
 import dev.toluwalase.jobapp.service.MatchingEngineService;
 import dev.toluwalase.jobapp.service.ProfileService;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Web controller handling Thymeleaf HTTP requests for browsing ranked job
@@ -57,6 +58,16 @@ public class JobWebController {
         this.jobPostingRepository = jobPostingRepository;
     }
 
+    private String resolveUsername(Principal principal, HttpSession session) {
+        if (principal != null && principal.getName() != null && !principal.getName().isBlank()) {
+            return principal.getName();
+        }
+        if (session != null && session.getAttribute("username") != null) {
+            return (String) session.getAttribute("username");
+        }
+        return "tolu";
+    }
+
     /**
      * Displays ranked job postings scored against the authenticated user's
      * MasterProfile.
@@ -66,16 +77,17 @@ public class JobWebController {
      * @param showAll        Whether to display all jobs across all industry
      *                       verticals
      * @param model          Spring MVC UI Model
-     * @param principal      Authenticated user principal (falls back to default
-     *                       seed user "tolu")
+     * @param principal      Authenticated user principal
+     * @param session        Current HTTP session
      * @return Template view name "jobs"
      */
     @GetMapping
     public String showJobs(@RequestParam(value = "category", required = false) JobCategory categoryFilter,
             @RequestParam(value = "showAll", required = false, defaultValue = "false") boolean showAll,
             Model model,
-            Principal principal) {
-        String username = (principal != null) ? principal.getName() : "tolu";
+            Principal principal,
+            HttpSession session) {
+        String username = resolveUsername(principal, session);
         MasterProfile profile = profileService.getOrCreateProfile(username);
 
         JobCategory activeCategory = null;

@@ -23,6 +23,7 @@ import dev.toluwalase.jobapp.domain.MasterProfile;
 import dev.toluwalase.jobapp.service.PdfExportService;
 import dev.toluwalase.jobapp.service.ProfileService;
 import dev.toluwalase.jobapp.service.TailoringService;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * Controller handling user interactions for the AI Application Kit workspace.
@@ -58,22 +59,33 @@ public class KitWebController {
      * @param redirectAttributes Flash attributes for error notices
      * @return Redirect to the split-screen kit editor
      */
+    private String resolveUsername(Principal principal, HttpSession session) {
+        if (principal != null && principal.getName() != null && !principal.getName().isBlank()) {
+            return principal.getName();
+        }
+        if (session != null && session.getAttribute("username") != null) {
+            return (String) session.getAttribute("username");
+        }
+        return "tolu";
+    }
+
     @GetMapping("/generate/{jobId}")
     public String generateKitGet(@PathVariable Long jobId,
                                 Principal principal,
+                                HttpSession session,
                                 RedirectAttributes redirectAttributes) {
-        return processKitGeneration(jobId, principal, redirectAttributes);
+        return processKitGeneration(jobId, resolveUsername(principal, session), redirectAttributes);
     }
 
     @PostMapping("/generate/{jobId}")
     public String generateKitPost(@PathVariable Long jobId,
                                  Principal principal,
+                                 HttpSession session,
                                  RedirectAttributes redirectAttributes) {
-        return processKitGeneration(jobId, principal, redirectAttributes);
+        return processKitGeneration(jobId, resolveUsername(principal, session), redirectAttributes);
     }
 
-    private String processKitGeneration(Long jobId, Principal principal, RedirectAttributes redirectAttributes) {
-        String username = (principal != null) ? principal.getName() : "tolu";
+    private String processKitGeneration(Long jobId, String username, RedirectAttributes redirectAttributes) {
         try {
             MasterProfile profile = profileService.getOrCreateProfile(username);
             ApplicationKit kit = tailoringService.generateOrGetKit(profile.getUser().getId(), jobId);

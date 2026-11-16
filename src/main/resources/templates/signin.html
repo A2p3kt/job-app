@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In | JobApp</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+        <!-- Logo -->
+        <a href="/jobs" class="flex items-center justify-center space-x-2.5 mb-6 group">
+            <div class="h-11 w-11 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-md group-hover:bg-indigo-700 transition">
+                JA
+            </div>
+            <span class="font-extrabold text-2xl text-slate-900 tracking-tight">JobApp</span>
+        </a>
+        <h2 class="text-center text-2xl font-bold tracking-tight text-slate-900">
+            Sign in to your account
+        </h2>
+        <p class="mt-2 text-center text-sm text-slate-600">
+            Access your multi-industry profile, ranked job board, and tailored application kits.
+        </p>
+    </div>
+
+    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+        <div class="bg-white py-8 px-6 shadow-xl shadow-slate-200/60 rounded-2xl border border-slate-200 sm:px-10">
+
+            <!-- Flash Success Message -->
+            <div th:if="${successMessage}" class="mb-5 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center space-x-2.5 text-sm">
+                <svg class="w-5 h-5 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                <span th:text="${successMessage}">Success message</span>
+            </div>
+
+            <!-- Flash Error Message -->
+            <div th:if="${errorMessage}" class="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center space-x-2.5 text-sm">
+                <svg class="w-5 h-5 text-rose-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                <span th:text="${errorMessage}">Error message</span>
+            </div>
+
+            <!-- Sign In Form -->
+            <form action="/signin" method="POST" class="space-y-5">
+                <div>
+                    <label for="username" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Username or Email
+                    </label>
+                    <div class="relative">
+                        <input id="username" name="username" type="text" autocomplete="username" required
+                               th:value="${username}"
+                               placeholder="e.g. tolu or candidate@example.com"
+                               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <input id="password" name="password" type="password" autocomplete="current-password" required
+                               placeholder="••••••••"
+                               class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm transition">
+                    </div>
+                </div>
+
+                <!-- Demo Credentials Callout -->
+                <div class="p-3 bg-amber-50 border border-amber-200/80 rounded-xl text-xs text-amber-900 flex items-start space-x-2">
+                    <span class="text-base leading-none">💡</span>
+                    <div>
+                        <span class="font-bold">Demo credentials:</span><br>
+                        Username: <code class="font-mono font-semibold bg-amber-100 px-1 py-0.5 rounded">tolu</code> &bull; Password: <code class="font-mono font-semibold bg-amber-100 px-1 py-0.5 rounded">password123</code>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
+                        Sign In
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6">
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-slate-200"></div>
+                    </div>
+                    <div class="relative flex justify-center text-xs uppercase">
+                        <span class="bg-white px-2 text-slate-500 font-medium">New candidate?</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex flex-col space-y-3">
+                    <a href="/signup"
+                       class="w-full flex justify-center items-center py-2.5 px-4 border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition shadow-sm">
+                        Create an account
+                    </a>
+                    <a href="/profile"
+                       class="text-center text-xs text-slate-500 hover:text-slate-800 transition">
+                        &larr; Continue as demo guest to Master Profile
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+</html>
