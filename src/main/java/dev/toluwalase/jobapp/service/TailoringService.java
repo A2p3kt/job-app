@@ -100,14 +100,7 @@ public class TailoringService {
                 .build();
 
         this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
-        String key = (geminiApiKey != null) ? geminiApiKey.trim() : "";
-        if (key.isEmpty()) {
-            String env = System.getenv("GEMINI_API_KEY");
-            if (env != null && !env.isBlank()) {
-                key = env.trim();
-            }
-        }
-        this.geminiApiKey = key;
+        this.geminiApiKey = (geminiApiKey != null) ? geminiApiKey.trim() : "";
         this.geminiModel = (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim()
                 : "gemini-3.1-flash-lite";
 

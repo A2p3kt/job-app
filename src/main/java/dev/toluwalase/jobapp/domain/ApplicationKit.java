@@ -114,9 +114,18 @@ public class ApplicationKit {
     }
 
     /**
-     * Automatically sets and refreshes the timestamp on insert and update.
+     * Initializes the timestamp on creation if not explicitly preset.
      */
     @PrePersist
+    protected void onCreate() {
+        if (this.updatedAt == null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    /**
+     * Automatically updates the modification timestamp on updates.
+     */
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();

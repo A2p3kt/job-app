@@ -58,7 +58,7 @@ public class PdfExportService {
      * @return Generated PDF document as byte array
      */
     public byte[] generateCvPdf(ApplicationKit kit) {
-        String content = (kit != null && kit.getTailoredCvContent() != null)
+        String content = (kit != null && kit.getTailoredCvContent() != null && !kit.getTailoredCvContent().isBlank())
                 ? kit.getTailoredCvContent()
                 : "# Candidate Curriculum Vitae\nNo content available.";
 
@@ -67,6 +67,7 @@ public class PdfExportService {
             PdfWriter.getInstance(document, out);
             document.open();
 
+            boolean hasElements = false;
             String[] lines = content.split("\r?\n");
             for (String rawLine : lines) {
                 String line = rawLine.trim();
@@ -82,6 +83,7 @@ public class PdfExportService {
                     p.setSpacingBefore(4);
                     p.setSpacingAfter(4);
                     document.add(p);
+                    hasElements = true;
                 } else if (line.startsWith("## ")) {
                     // Major Section Header
                     String sectionText = line.substring(3).trim();
@@ -92,6 +94,7 @@ public class PdfExportService {
 
                     LineSeparator lineSep = new LineSeparator(1f, 100, COLOR_LINE, Element.ALIGN_CENTER, -2);
                     document.add(lineSep);
+                    hasElements = true;
                 } else if (line.startsWith("### ")) {
                     // Subsection / Role Title
                     String subText = line.substring(4).trim();
@@ -99,6 +102,7 @@ public class PdfExportService {
                     p.setSpacingBefore(8);
                     p.setSpacingAfter(2);
                     document.add(p);
+                    hasElements = true;
                 } else if (line.startsWith("- ") || line.startsWith("* ")) {
                     // Bulleted Item
                     String bulletText = line.substring(2).trim();
@@ -109,6 +113,7 @@ public class PdfExportService {
                     p.add(new Chunk("\u2022  ", FONT_SECTION));
                     p.add(new Chunk(bulletText, FONT_BULLET));
                     document.add(p);
+                    hasElements = true;
                 } else if (line.startsWith("> ")) {
                     // Callout / Target role line
                     String quoteText = line.substring(2).trim().replaceAll("\\*\\*", "");
@@ -116,6 +121,7 @@ public class PdfExportService {
                     p.setSpacingBefore(2);
                     p.setSpacingAfter(6);
                     document.add(p);
+                    hasElements = true;
                 } else if (line.startsWith("*") && line.endsWith("*") && line.length() > 2) {
                     // Dates / Subtitle line
                     String italicText = line.substring(1, line.length() - 1).trim();
@@ -123,6 +129,7 @@ public class PdfExportService {
                     p.setSpacingBefore(1);
                     p.setSpacingAfter(3);
                     document.add(p);
+                    hasElements = true;
                 } else {
                     // Regular Body Paragraph
                     String cleanedLine = line.replaceAll("\\*\\*", "");
@@ -131,7 +138,12 @@ public class PdfExportService {
                     p.setSpacingBefore(2);
                     p.setSpacingAfter(4);
                     document.add(p);
+                    hasElements = true;
                 }
+            }
+
+            if (!hasElements) {
+                document.add(new Paragraph("No content available.", FONT_BODY));
             }
 
             document.close();
@@ -155,15 +167,16 @@ public class PdfExportService {
      * @return Generated PDF document as byte array
      */
     public byte[] generateCoverLetterPdf(ApplicationKit kit) {
-        String content = (kit != null && kit.getTailoredCoverLetterContent() != null)
+        String content = (kit != null && kit.getTailoredCoverLetterContent() != null && !kit.getTailoredCoverLetterContent().isBlank())
                 ? kit.getTailoredCoverLetterContent()
-                : "Cover Letter\nNo content available.";
+                : "Cover Letter\n\nNo content available.";
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4, 44, 44, 44, 44);
             PdfWriter.getInstance(document, out);
             document.open();
 
+            boolean hasElements = false;
             String[] paragraphs = content.split("(\r?\n){2,}");
             boolean isFirst = true;
 
@@ -178,6 +191,7 @@ public class PdfExportService {
                     Paragraph p = new Paragraph(para, FONT_CL_DATE);
                     p.setSpacingAfter(12);
                     document.add(p);
+                    hasElements = true;
                     isFirst = false;
                     continue;
                 }
@@ -187,19 +201,26 @@ public class PdfExportService {
                     p.setLeading(15f);
                     p.setSpacingAfter(10);
                     document.add(p);
+                    hasElements = true;
                 } else if (para.startsWith("Sincerely") || para.startsWith("Best regards") || para.startsWith("Warm regards")) {
                     Paragraph p = new Paragraph(para, FONT_CL_SIGN);
                     p.setLeading(16f);
                     p.setSpacingBefore(14);
                     p.setSpacingAfter(6);
                     document.add(p);
+                    hasElements = true;
                 } else {
                     Paragraph p = new Paragraph(para, FONT_CL_BODY);
                     p.setLeading(16f);
                     p.setSpacingBefore(4);
                     p.setSpacingAfter(8);
                     document.add(p);
+                    hasElements = true;
                 }
+            }
+
+            if (!hasElements) {
+                document.add(new Paragraph("No content available.", FONT_CL_BODY));
             }
 
             document.close();
