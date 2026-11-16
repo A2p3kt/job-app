@@ -47,7 +47,9 @@ public class JobappApplication {
      */
     @Bean
     public RestClient.Builder restClientBuilder() {
-        return RestClient.builder();
+        return RestClient.builder()
+                .defaultHeader(org.springframework.http.HttpHeaders.USER_AGENT,
+                        "JobApp/1.0 (Job Market Ingestion Engine; +https://github.com/A2p3kt/job-app)");
     }
 
     /**

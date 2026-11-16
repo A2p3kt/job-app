@@ -58,10 +58,12 @@ public class TailoringService {
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final String geminiApiKey;
+    private final String geminiModel;
 
     /**
      * Explicit constructor injection without Lombok.
      */
+    @Autowired
     public TailoringService(ApplicationKitRepository kitRepository,
                             JobPostingRepository jobRepository,
                             AppUserRepository userRepository,
@@ -70,7 +72,8 @@ public class TailoringService {
                             MatchingEngineService matchingEngineService,
                             @Autowired(required = false) RestClient.Builder restClientBuilder,
                             @Autowired(required = false) ObjectMapper objectMapper,
-                            @Value("${gemini.api.key:}") String geminiApiKey) {
+                            @Value("${gemini.api.key:}") String geminiApiKey,
+                            @Value("${gemini.model:gemini-3.1-flash-lite}") String geminiModel) {
         this.kitRepository = kitRepository;
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
@@ -79,7 +82,21 @@ public class TailoringService {
         this.matchingEngineService = matchingEngineService;
         this.restClient = (restClientBuilder != null) ? restClientBuilder.build() : RestClient.create();
         this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
-        this.geminiApiKey = (geminiApiKey != null) ? geminiApiKey.trim() : "";
+        String key = (geminiApiKey != null) ? geminiApiKey.trim() : "";
+        if (key.isEmpty()) {
+            String env = System.getenv("GEMINI_API_KEY");
+            if (env != null && !env.isBlank()) {
+                key = env.trim();
+            }
+        }
+        this.geminiApiKey = key;
+        this.geminiModel = (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-3.1-flash-lite";
+
+        if (!this.geminiApiKey.isEmpty()) {
+            log.info("Gemini AI API key initialized successfully (model: '{}')", this.geminiModel);
+        } else {
+            log.info("No Gemini API key detected. TailoringService will operate in offline deterministic mode.");
+        }
     }
 
     /**
@@ -176,43 +193,63 @@ public class TailoringService {
 
     /**
      * Invokes the Google Gemini API to generate customized application materials.
-     * Returns a 2-element array: [tailoredCv, tailoredCoverLetter].
+     * Tries candidate models (primary model, gemini-3.1-flash-lite, gemini-3.8-flash)
+     * and returns a 2-element array: [tailoredCv, tailoredCoverLetter].
      */
     private String[] callGeminiAi(MasterProfile profile, List<ProfileItem> items, JobPosting job, JobMatchDto match) throws Exception {
         String prompt = buildGeminiPrompt(profile, items, job, match);
 
-        String requestUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + geminiApiKey;
+        String[] targetModels = new String[]{
+                this.geminiModel,
+                "gemini-3.1-flash-lite",
+                "gemini-3.1-flash-lite-preview",
+                "gemini-3.8-flash"
+        };
 
-        String requestBody = objectMapper.writeValueAsString(Collections.singletonMap("contents",
-                Collections.singletonList(Collections.singletonMap("parts",
-                        Collections.singletonList(Collections.singletonMap("text", prompt))))));
+        Exception lastException = null;
 
-        String rawResponse = restClient.post()
-                .uri(requestUrl)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(requestBody)
-                .retrieve()
-                .body(String.class);
+        for (String modelName : targetModels) {
+            try {
+                String requestUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + geminiApiKey;
 
-        JsonNode root = objectMapper.readTree(rawResponse);
-        JsonNode candidates = root.path("candidates");
-        if (candidates.isMissingNode() || !candidates.isArray() || candidates.isEmpty()) {
-            throw new IllegalStateException("Gemini API response did not contain candidates");
+                String requestBody = objectMapper.writeValueAsString(Collections.singletonMap("contents",
+                        Collections.singletonList(Collections.singletonMap("parts",
+                                Collections.singletonList(Collections.singletonMap("text", prompt))))));
+
+                String rawResponse = restClient.post()
+                        .uri(requestUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(requestBody)
+                        .retrieve()
+                        .body(String.class);
+
+                JsonNode root = objectMapper.readTree(rawResponse);
+                JsonNode candidates = root.path("candidates");
+                if (candidates.isMissingNode() || !candidates.isArray() || candidates.isEmpty()) {
+                    throw new IllegalStateException("Gemini API response did not contain candidates");
+                }
+
+                String outputText = candidates.get(0).path("content").path("parts").get(0).path("text").asText("");
+                if (outputText.isBlank()) {
+                    throw new IllegalStateException("Empty text content received from Gemini API");
+                }
+
+                String delimiter = "===COVER_LETTER===";
+                if (outputText.contains(delimiter)) {
+                    String[] parts = outputText.split(delimiter, 2);
+                    log.info("Successfully generated AI tailored application materials with Gemini model '{}'", modelName);
+                    return new String[]{parts[0].trim(), parts[1].trim()};
+                } else {
+                    log.warn("Gemini model '{}' response omitted delimiter. Using output as CV with deterministic cover letter.", modelName);
+                    return new String[]{outputText.trim(), generateDeterministicCoverLetter(profile, items, job, match)};
+                }
+            } catch (Exception ex) {
+                lastException = ex;
+                log.warn("Gemini inference attempt with model '{}' failed: {}. Trying fallback model candidate...", modelName, ex.getMessage());
+            }
         }
 
-        String outputText = candidates.get(0).path("content").path("parts").get(0).path("text").asText("");
-        if (outputText.isBlank()) {
-            throw new IllegalStateException("Empty text content received from Gemini API");
-        }
-
-        String delimiter = "===COVER_LETTER===";
-        if (outputText.contains(delimiter)) {
-            String[] parts = outputText.split(delimiter, 2);
-            return new String[]{parts[0].trim(), parts[1].trim()};
-        } else {
-            // Fallback: entire text as CV, generate deterministic cover letter
-            return new String[]{outputText.trim(), generateDeterministicCoverLetter(profile, items, job, match)};
-        }
+        throw (lastException != null) ? lastException : new IllegalStateException("All Gemini model endpoints failed");
     }
 
     /**

@@ -1,7 +1,6 @@
 package dev.toluwalase.jobapp.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -12,7 +11,6 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -84,7 +82,8 @@ public class TailoringServiceTest {
                 matchingEngineService,
                 null,
                 new ObjectMapper(),
-                ""
+                "",
+                "gemini-3.1-flash-lite"
         );
 
         testUser = new AppUser("tolu", "tolu@example.com", "hash", "LOCAL", "ROLE_USER");
