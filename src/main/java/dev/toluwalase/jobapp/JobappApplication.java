@@ -9,7 +9,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-
+import org.springframework.context.annotation.Scope;
+import org.springframework.http.HttpHeaders;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestClient;
 
@@ -46,9 +47,10 @@ public class JobappApplication {
      * @return RestClient.Builder instance
      */
     @Bean
+    @Scope("prototype")
     public RestClient.Builder restClientBuilder() {
         return RestClient.builder()
-                .defaultHeader(org.springframework.http.HttpHeaders.USER_AGENT,
+                .defaultHeader(HttpHeaders.USER_AGENT,
                         "JobApp/1.0 (Job Market Ingestion Engine; +https://github.com/A2p3kt/job-app)");
     }
 

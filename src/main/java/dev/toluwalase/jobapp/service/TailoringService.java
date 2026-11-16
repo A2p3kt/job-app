@@ -1,5 +1,7 @@
 package dev.toluwalase.jobapp.service;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -12,7 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
@@ -34,13 +38,17 @@ import tools.jackson.databind.ObjectMapper;
 
 /**
  * Service orchestrating AI-powered tailoring of job applications.
- * Produces structured, customized CVs and compelling cover letters for a specific
+ * Produces structured, customized CVs and compelling cover letters for a
+ * specific
  * (Candidate, JobPosting) pair.
  *
  * Resilience Guarantee:
- * When an active Gemini API key is provided and reachable, it uses LLM inference.
- * When the key is absent, blank, or the external API call fails, it automatically
- * falls back to a deterministic, profile-driven template generator, guaranteeing
+ * When an active Gemini API key is provided and reachable, it uses LLM
+ * inference.
+ * When the key is absent, blank, or the external API call fails, it
+ * automatically
+ * falls back to a deterministic, profile-driven template generator,
+ * guaranteeing
  * zero crashes and 100% offline testability.
  */
 @Service
@@ -65,22 +73,32 @@ public class TailoringService {
      */
     @Autowired
     public TailoringService(ApplicationKitRepository kitRepository,
-                            JobPostingRepository jobRepository,
-                            AppUserRepository userRepository,
-                            MasterProfileRepository profileRepository,
-                            ProfileItemRepository itemRepository,
-                            MatchingEngineService matchingEngineService,
-                            @Autowired(required = false) RestClient.Builder restClientBuilder,
-                            @Autowired(required = false) ObjectMapper objectMapper,
-                            @Value("${gemini.api.key:}") String geminiApiKey,
-                            @Value("${gemini.model:gemini-3.1-flash-lite}") String geminiModel) {
+            JobPostingRepository jobRepository,
+            AppUserRepository userRepository,
+            MasterProfileRepository profileRepository,
+            ProfileItemRepository itemRepository,
+            MatchingEngineService matchingEngineService,
+            @Autowired(required = false) RestClient.Builder restClientBuilder,
+            @Autowired(required = false) ObjectMapper objectMapper,
+            @Value("${gemini.api.key:}") String geminiApiKey,
+            @Value("${gemini.model:gemini-3.1-flash-lite}") String geminiModel) {
         this.kitRepository = kitRepository;
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
         this.itemRepository = itemRepository;
         this.matchingEngineService = matchingEngineService;
-        this.restClient = (restClientBuilder != null) ? restClientBuilder.build() : RestClient.create();
+
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(Duration.ofSeconds(10));
+        requestFactory.setReadTimeout(Duration.ofSeconds(60));
+
+        RestClient.Builder builder = (restClientBuilder != null) ? restClientBuilder.build().mutate()
+                : RestClient.builder();
+        this.restClient = builder
+                .requestFactory(requestFactory)
+                .build();
+
         this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
         String key = (geminiApiKey != null) ? geminiApiKey.trim() : "";
         if (key.isEmpty()) {
@@ -90,7 +108,8 @@ public class TailoringService {
             }
         }
         this.geminiApiKey = key;
-        this.geminiModel = (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-3.1-flash-lite";
+        this.geminiModel = (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim()
+                : "gemini-3.1-flash-lite";
 
         if (!this.geminiApiKey.isEmpty()) {
             log.info("Gemini AI API key initialized successfully (model: '{}')", this.geminiModel);
@@ -100,7 +119,8 @@ public class TailoringService {
     }
 
     /**
-     * Generates or retrieves an existing ApplicationKit for a given candidate user ID and job posting ID.
+     * Generates or retrieves an existing ApplicationKit for a given candidate user
+     * ID and job posting ID.
      *
      * @param userId Primary key of the candidate AppUser
      * @param jobId  Primary key of the target JobPosting
@@ -154,8 +174,7 @@ public class TailoringService {
                 String.join(", ", match.getMatchReasons()),
                 tailoredCv,
                 tailoredCoverLetter,
-                "DRAFT"
-        );
+                "DRAFT");
 
         ApplicationKit savedKit = kitRepository.save(kit);
         log.info("Successfully persisted ApplicationKit (ID: {}) for user '{}' targeting '{}' at '{}'",
@@ -166,8 +185,8 @@ public class TailoringService {
     /**
      * Updates editable CV and Cover Letter text fields for a saved application kit.
      *
-     * @param kitId Primary key of the ApplicationKit
-     * @param cvContent Updated CV markdown/text
+     * @param kitId              Primary key of the ApplicationKit
+     * @param cvContent          Updated CV markdown/text
      * @param coverLetterContent Updated Cover Letter text
      * @return Updated ApplicationKit
      */
@@ -193,15 +212,16 @@ public class TailoringService {
 
     /**
      * Invokes the Google Gemini API to generate customized application materials.
-     * Tries candidate models (primary model, gemini-3.1-flash-lite, gemini-3.8-flash)
+     * Tries candidate models (primary model, gemini-3.1-flash-lite,
+     * gemini-3.8-flash)
      * and returns a 2-element array: [tailoredCv, tailoredCoverLetter].
      */
-    private String[] callGeminiAi(MasterProfile profile, List<ProfileItem> items, JobPosting job, JobMatchDto match) throws Exception {
+    private String[] callGeminiAi(MasterProfile profile, List<ProfileItem> items, JobPosting job, JobMatchDto match)
+            throws Exception {
         String prompt = buildGeminiPrompt(profile, items, job, match);
 
-        String[] targetModels = new String[]{
+        String[] targetModels = new String[] {
                 this.geminiModel,
-                "gemini-3.1-flash-lite",
                 "gemini-3.1-flash-lite-preview",
                 "gemini-3.8-flash"
         };
@@ -210,18 +230,32 @@ public class TailoringService {
 
         for (String modelName : targetModels) {
             try {
-                String requestUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName + ":generateContent?key=" + geminiApiKey;
+                String requestUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + modelName
+                        + ":generateContent?key=" + geminiApiKey;
 
                 String requestBody = objectMapper.writeValueAsString(Collections.singletonMap("contents",
                         Collections.singletonList(Collections.singletonMap("parts",
                                 Collections.singletonList(Collections.singletonMap("text", prompt))))));
 
-                String rawResponse = restClient.post()
+                byte[] responseBytes = restClient.post()
                         .uri(requestUrl)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
                         .body(requestBody)
                         .retrieve()
-                        .body(String.class);
+                        .onStatus(HttpStatusCode::isError, (request, response) -> {
+                            byte[] errBytes = response.getBody().readAllBytes();
+                            String errStr = new String(errBytes, StandardCharsets.UTF_8);
+                            throw new IllegalStateException("HTTP " + response.getStatusCode()
+                                    + ": " + (errStr.isBlank() ? "<empty response>" : errStr));
+                        })
+                        .body(byte[].class);
+
+                if (responseBytes == null || responseBytes.length == 0) {
+                    throw new IllegalStateException("Empty response received from Gemini API");
+                }
+
+                String rawResponse = new String(responseBytes, StandardCharsets.UTF_8);
 
                 JsonNode root = objectMapper.readTree(rawResponse);
                 JsonNode candidates = root.path("candidates");
@@ -237,15 +271,20 @@ public class TailoringService {
                 String delimiter = "===COVER_LETTER===";
                 if (outputText.contains(delimiter)) {
                     String[] parts = outputText.split(delimiter, 2);
-                    log.info("Successfully generated AI tailored application materials with Gemini model '{}'", modelName);
-                    return new String[]{parts[0].trim(), parts[1].trim()};
+                    log.info("Successfully generated AI tailored application materials with Gemini model '{}'",
+                            modelName);
+                    return new String[] { parts[0].trim(), parts[1].trim() };
                 } else {
-                    log.warn("Gemini model '{}' response omitted delimiter. Using output as CV with deterministic cover letter.", modelName);
-                    return new String[]{outputText.trim(), generateDeterministicCoverLetter(profile, items, job, match)};
+                    log.warn(
+                            "Gemini model '{}' response omitted delimiter. Using output as CV with deterministic cover letter.",
+                            modelName);
+                    return new String[] { outputText.trim(),
+                            generateDeterministicCoverLetter(profile, items, job, match) };
                 }
             } catch (Exception ex) {
                 lastException = ex;
-                log.warn("Gemini inference attempt with model '{}' failed: {}. Trying fallback model candidate...", modelName, ex.getMessage());
+                log.warn("Gemini inference attempt with model '{}' failed: {}. Trying fallback model candidate...",
+                        modelName, ex.getMessage());
             }
         }
 
@@ -255,7 +294,8 @@ public class TailoringService {
     /**
      * Constructs the structured prompt for Gemini LLM.
      */
-    private String buildGeminiPrompt(MasterProfile profile, List<ProfileItem> items, JobPosting job, JobMatchDto match) {
+    private String buildGeminiPrompt(MasterProfile profile, List<ProfileItem> items, JobPosting job,
+            JobMatchDto match) {
         StringBuilder sb = new StringBuilder();
         sb.append("You are an expert career consultant and professional resume writer specializing in the ")
                 .append(profile.getSpecialization().getDisplayName())
@@ -269,7 +309,8 @@ public class TailoringService {
         sb.append("### CANDIDATE PROFILE:\n");
         sb.append("Full Name: ").append(profile.getFullName()).append("\n");
         sb.append("Headline: ").append(profile.getHeadline()).append("\n");
-        sb.append("Email: ").append(profile.getUser() != null ? profile.getUser().getEmail() : "candidate@example.com").append("\n");
+        sb.append("Email: ").append(profile.getUser() != null ? profile.getUser().getEmail() : "candidate@example.com")
+                .append("\n");
         sb.append("Phone: ").append(profile.getPhone()).append("\n");
         sb.append("Industry Specialization: ").append(profile.getSpecialization().getDisplayName()).append("\n");
         sb.append("Summary: ").append(profile.getSummary()).append("\n");
@@ -302,7 +343,8 @@ public class TailoringService {
      * Deterministic, zero-crash CV generator assembling structured markdown
      * directly from the candidate's real profile items and target job requirements.
      */
-    public String generateDeterministicCv(MasterProfile profile, List<ProfileItem> items, JobPosting job, JobMatchDto match) {
+    public String generateDeterministicCv(MasterProfile profile, List<ProfileItem> items, JobPosting job,
+            JobMatchDto match) {
         StringBuilder sb = new StringBuilder();
 
         String email = (profile.getUser() != null && profile.getUser().getEmail() != null)
@@ -361,7 +403,8 @@ public class TailoringService {
         if (!experiences.isEmpty()) {
             for (ProfileItem exp : experiences) {
                 sb.append("### ").append(exp.getTitle()).append(" \u2014 ").append(exp.getOrganization()).append("\n");
-                String start = (exp.getStartDate() != null && !exp.getStartDate().isBlank()) ? exp.getStartDate() : "2022";
+                String start = (exp.getStartDate() != null && !exp.getStartDate().isBlank()) ? exp.getStartDate()
+                        : "2022";
                 String end = (exp.getEndDate() != null && !exp.getEndDate().isBlank()) ? exp.getEndDate() : "Present";
                 sb.append("*").append(start).append(" \u2013 ").append(end).append("*\n\n");
                 if (exp.getDescription() != null && !exp.getDescription().isBlank()) {
@@ -417,7 +460,8 @@ public class TailoringService {
      * Deterministic, zero-crash Cover Letter generator assembling an eloquent,
      * formal business letter directly from the candidate's real profile items.
      */
-    public String generateDeterministicCoverLetter(MasterProfile profile, List<ProfileItem> items, JobPosting job, JobMatchDto match) {
+    public String generateDeterministicCoverLetter(MasterProfile profile, List<ProfileItem> items, JobPosting job,
+            JobMatchDto match) {
         StringBuilder sb = new StringBuilder();
 
         String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy"));
@@ -462,7 +506,8 @@ public class TailoringService {
             ProfileItem exp = topExp.get();
             sb.append("Notably, as ").append(exp.getTitle()).append(" at ").append(exp.getOrganization())
                     .append(", I contributed to meaningful initiatives by ")
-                    .append(exp.getDescription() != null ? exp.getDescription().trim() : "delivering consistent operational value")
+                    .append(exp.getDescription() != null ? exp.getDescription().trim()
+                            : "delivering consistent operational value")
                     .append(". ");
         }
 
@@ -471,7 +516,8 @@ public class TailoringService {
                 .append(String.join(", ", match.getMatchReasons())).append(".\n\n");
 
         sb.append("I am eager to bring my dedicated work ethic, collaborative spirit, and domain expertise to ")
-                .append(job.getCompany()).append(". I welcome the opportunity to discuss in an interview how my capabilities can support your upcoming goals and team objectives.\n\n");
+                .append(job.getCompany())
+                .append(". I welcome the opportunity to discuss in an interview how my capabilities can support your upcoming goals and team objectives.\n\n");
 
         sb.append("Thank you for your consideration. I look forward to speaking with you.\n\n");
 
@@ -482,4 +528,3 @@ public class TailoringService {
         return sb.toString();
     }
 }
-
