@@ -31,7 +31,6 @@ import tools.jackson.databind.ObjectMapper;
  * Periodically retrieves external market postings from public zero-auth APIs:
  * <ul>
  *   <li>JobTech OpenAPI (Nordics / Multi-Industry)</li>
- *   <li>The Muse Public API (Global / Multi-Industry)</li>
  *   <li>Remotive API (Global Remote / Tech, Marketing, Business)</li>
  *   <li>Arbeitnow API (European Job Board / Multi-Industry)</li>
  * </ul>
@@ -109,7 +108,6 @@ public class JobScraperService {
         int totalSaved = 0;
 
         totalSaved += scrapeJobTech();
-        totalSaved += scrapeTheMuse();
         totalSaved += scrapeRemotive();
         totalSaved += scrapeArbeitnow();
 
@@ -214,113 +212,6 @@ public class JobScraperService {
                 count++;
             } catch (Exception ex) {
                 log.warn("Failed to parse single JobTech record: {}", ex.getMessage());
-            }
-        }
-        return count;
-    }
-
-    /**
-     * Scrapes opportunities using The Muse Public API.
-     *
-     * @return Count of newly persisted The Muse postings
-     */
-    public int scrapeTheMuse() {
-        int count = 0;
-        log.info("Querying The Muse Public API...");
-
-        for (JobCategory category : JobCategory.values()) {
-            String museCat = category.getTheMuseCategory();
-            if (museCat == null || museCat.isBlank()) {
-                continue;
-            }
-
-            try {
-                String encodedCategory = URLEncoder.encode(museCat, StandardCharsets.UTF_8);
-                String url = "https://www.themuse.com/api/public/jobs?category=" + encodedCategory + "&page=1";
-
-                String responseBody = restClient.get()
-                        .uri(url)
-                        .retrieve()
-                        .body(String.class);
-
-                if (responseBody == null || responseBody.isBlank()) {
-                    continue;
-                }
-
-                JsonNode root = objectMapper.readTree(responseBody);
-                JsonNode results = root.path("results");
-                count += ingestTheMuseResults(results, category);
-            } catch (Exception ex) {
-                log.warn("The Muse scraper encountered an error for category {}: {}", category.name(), ex.getMessage());
-            }
-        }
-
-        log.info("The Muse scraper concluded. Added {} new records.", count);
-        return count;
-    }
-
-    /**
-     * Parses and persists an array of The Muse job JSON nodes.
-     *
-     * @param results  JSON array node containing The Muse results
-     * @param category Inferred or target job category
-     * @return Count of newly persisted postings
-     */
-    public int ingestTheMuseResults(JsonNode results, JobCategory category) {
-        if (results == null || !results.isArray()) {
-            return 0;
-        }
-
-        int count = 0;
-        for (JsonNode node : results) {
-            try {
-                String rawId = node.path("id").asText();
-                if (rawId == null || rawId.isBlank()) {
-                    continue;
-                }
-                String externalId = "themuse-" + rawId.trim();
-                if (jobPostingRepository.existsByExternalId(externalId)) {
-                    continue;
-                }
-
-                String title = node.path("name").asText("").trim();
-                if (title.isBlank()) {
-                    title = "Professional Opportunity";
-                }
-
-                String company = node.path("company").path("name").asText("").trim();
-                if (company.isBlank()) {
-                    company = "Confidential Employer";
-                }
-
-                String location = node.path("locations").path(0).path("name").asText("Flexible / Remote").trim();
-                if (location.isBlank()) {
-                    location = "Flexible / Remote";
-                }
-
-                String rawDesc = node.path("contents").asText("");
-                String cleanDesc = cleanHtml(rawDesc);
-                String sourceUrl = node.path("refs").path("landing_page").asText("");
-
-                String tags = extractTags(cleanDesc + " " + title, category);
-
-                JobPosting posting = new JobPosting(
-                        externalId,
-                        category,
-                        title,
-                        company,
-                        location,
-                        cleanDesc,
-                        tags,
-                        sourceUrl,
-                        "TheMuse",
-                        LocalDateTime.now()
-                );
-
-                jobPostingRepository.save(posting);
-                count++;
-            } catch (Exception ex) {
-                log.warn("Failed to parse single The Muse record: {}", ex.getMessage());
             }
         }
         return count;

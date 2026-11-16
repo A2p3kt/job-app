@@ -17,7 +17,7 @@
 
 ### Core Pillars
 1. **Multi-Industry Master Profile:** Candidates choose their `JobCategory` specialization and record their contact details, headline, executive summary, verified skills, and chronological building blocks (work experience, education, certifications, and projects).
-2. **Multi-Source Autonomous Job Ingestion:** Background workers periodically fetch real-world opportunities from public, zero-auth APIs (**JobTech Nordics**, **The Muse**, **Remotive**), sanitize HTML, and tag incoming jobs using industry-specific keyword dictionaries.
+2. **Multi-Source Autonomous Job Ingestion:** Background workers periodically fetch real-world opportunities from public, zero-auth APIs (**JobTech Nordics**, **Remotive**, **Arbeitnow**), sanitize HTML, and tag incoming jobs using industry-specific keyword dictionaries.
 3. **Specialization-Aware Matching Engine:** Evaluates job openings against candidate profiles using a hybrid scoring algorithm combining explicit search preferences (40%) and semantic profile background overlap (60%).
 4. **AI-Powered Tailoring:** On-demand generation of targeted, high-impact **Custom CVs** and **Cover Letters** via an LLM API (Google Gemini / OpenAI), complete with a resilient offline template fallback for zero-crash grading.
 5. **Interactive Editor & Dynamic PDF Export:** Users review, edit, and fine-tune their application materials directly in an in-browser split-view workspace, then download production-ready PDF documents via OpenPDF.
@@ -76,7 +76,7 @@ src/main/java/dev/toluwalase/jobapp/
 - **Database (Development):** In-Memory H2 Database (`jdbc:h2:mem:jobappdb`) with H2 Web Console
 - **Database (Production / Grade 5):** PostgreSQL (`org.postgresql.Driver`)
 - **PDF Generation:** OpenPDF (`com.github.librepdf:openpdf`)
-- **External Public APIs:** JobTech Nordics API, The Muse API, Remotive API, Arbeitnow API
+- **External Public APIs:** JobTech Nordics API, Remotive API, Arbeitnow API
 - **AI / LLM Integration:** Spring `RestClient` (calling Google Gemini / OpenAI API with deterministic offline fallback)
 - **Testing:** JUnit 5, Mockito, Spring Boot Test (`@SpringBootTest`, `@DataJpaTest`, `@WebMvcTest`)
 - **Build Tool:** Maven
@@ -85,7 +85,7 @@ src/main/java/dev/toluwalase/jobapp/
 
 ## 4. Multi-Source Job Scraper & Ingestion Engine
 
-The platform features an autonomous, multi-industry ingestion service implemented in [`JobScraperService`](src/main/java/dev/toluwalase/jobapp/service/JobScraperService.java). It automatically ingests real-world market postings across all career categories from four public, zero-auth APIs and persists them into the H2 database (`job_postings` table).
+The platform features an autonomous, multi-industry ingestion service implemented in [`JobScraperService`](src/main/java/dev/toluwalase/jobapp/service/JobScraperService.java). It automatically ingests real-world market postings across all career categories from three public, zero-auth APIs and persists them into the H2 database (`job_postings` table).
 
 ### 4.1 Integrated Public Job APIs (Zero-Auth)
 1. **JobTech OpenAPI (Nordics / Multi-Industry):**
@@ -94,20 +94,13 @@ The platform features an autonomous, multi-industry ingestion service implemente
    - **Coverage:** Public open data covering all industries across Nordic municipalities (technology, cleaning/facility operations, legal, marketing, finance, healthcare).
    - **Key Fields:** `id` -> `headline` (title), `employer.name` (company), `workplace_address.municipality` (location), `description.text` (body), `webpage_url` (source link).
 
-2. **The Muse Public API (Global / Multi-Industry):**
-   - **Base URL:** `https://www.themuse.com/api/public/jobs`
-   - **Method:** `GET /jobs?category={category}&page=1`
-   - **Coverage:** Global white-collar, corporate, engineering, marketing, and legal roles.
-   - **Resilience:** Requests include realistic browser headers and gracefully handle Cloudflare anti-bot challenges (`cf-mitigated`) without crashing the application.
-   - **Key Fields:** `id` -> `name` (title), `company.name`, `locations[0].name`, `contents` (HTML body), `refs.landing_page`.
-
-3. **Remotive API (Global Remote):**
+2. **Remotive API (Global Remote):**
    - **Base URL:** `https://remotive.com/api/remote-jobs`
    - **Method:** `GET /remote-jobs?category={slug}&limit=10`
    - **Coverage:** Worldwide remote opportunities (`software-dev`, `marketing`, `finance-legal`, `all-others`).
    - **Key Fields:** `id` -> `title`, `company_name`, `candidate_required_location` (remote designation), `description` (HTML body), `url`.
 
-4. **Arbeitnow API (European Multi-Industry Feed):**
+3. **Arbeitnow API (European Multi-Industry Feed):**
    - **Base URL:** `https://www.arbeitnow.com/api/job-board-api`
    - **Method:** `GET /job-board-api`
    - **Coverage:** Broad European job portal containing diverse tech, sales, marketing, operations, and support roles.
@@ -119,7 +112,7 @@ Each retrieved listing passes through a resilient, 5-stage processing pipeline:
 
 ```mermaid
 flowchart TD
-    API["External API Payload"] --> ID["Generate Prefixed External ID<br/>(jobtech-*, themuse-*, remotive-*, arbeitnow-*)"]
+    API["External API Payload"] --> ID["Generate Prefixed External ID<br/>(jobtech-*, remotive-*, arbeitnow-*)"]
     ID --> DUP{"existsByExternalId?"}
     DUP -- "Yes" --> SKIP["Skip (Prevent Duplicate Row)"]
     DUP -- "No" --> SANITIZE["cleanHtml()<br/>Strip HTML tags, decode entities, normalize spaces"]
@@ -127,7 +120,7 @@ flowchart TD
     TAGS --> PERSIST["jobPostingRepository.save(posting)<br/>Persist JobPosting into H2 database"]
 ```
 
-1. **Source-Prefixed Identifiers:** To eliminate collisions across different APIs, external IDs are prefixed by source: `jobtech-{id}`, `themuse-{id}`, `remotive-{id}`, and `arbeitnow-{slug}`.
+1. **Source-Prefixed Identifiers:** To eliminate collisions across different APIs, external IDs are prefixed by source: `jobtech-{id}`, `remotive-{id}`, and `arbeitnow-{slug}`.
 2. **Deduplication Check:** Calls `jobPostingRepository.existsByExternalId(...)` before parsing or inserting. Existing listings are skipped instantly.
 3. **HTML Sanitization (`cleanHtml`):** Strips block and inline tags (`<p>`, `<div>`, `<br/>`, `<strong>`), decodes HTML entities (`&amp;`, `&quot;`, `&#39;`, `&nbsp;`, `&#8211;`), fixes punctuation spacing, and collapses redundant whitespace.
 4. **Domain Keyword Tagging (`extractTags`):** Cross-references the job's title and description against the specific `JobCategory`'s keyword dictionary using regex word boundaries (preventing false positives like matching `Java` inside `JavaScript`).
@@ -349,7 +342,7 @@ The in-memory database console is available during development:
 - [x] **No Lombok:** Handwritten, clean, standard constructors, getters, and setters.
 - [x] **Comprehensive Documentation:** Full Javadoc on all classes and methods.
 - [x] **Multi-Industry Specialization:** Support for Tech, Marketing, Legal, Operations/Cleaning, Finance, and Healthcare.
-- [x] **Multi-Source Scheduled Scraper:** Hourly background ingestion from JobTech Nordics, The Muse, Remotive, and Arbeitnow with manual trigger.
+- [x] **Multi-Source Scheduled Scraper:** Hourly background ingestion from JobTech Nordics, Remotive, and Arbeitnow with manual trigger.
 - [x] **Two-Tier Matching Algorithm:** 40% preference overlap + 60% semantic profile evidence score.
 - [x] **Dual-Mode AI Tailoring:** Live LLM integration via `RestClient` + deterministic offline template fallback.
 - [x] **Dynamic PDF Generation:** On-the-fly binary rendering of tailored CVs and cover letters via OpenPDF.

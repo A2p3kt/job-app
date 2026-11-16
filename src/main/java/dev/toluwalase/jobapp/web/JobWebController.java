@@ -109,7 +109,6 @@ public class JobWebController {
 
     /**
      * Triggers an immediate, synchronous multi-source scraping run across JobTech,
-     * The Muse,
      * Remotive, and Arbeitnow, refreshing the database with latest market listings.
      *
      * @param redirectAttributes Flash attributes for feedback notifications
@@ -123,7 +122,7 @@ public class JobWebController {
             if (newJobs > 0) {
                 redirectAttributes.addFlashAttribute("successMessage",
                         "Marketplace sync complete! Successfully ingested " + newJobs
-                                + " new job postings from JobTech, The Muse, Remotive, and Arbeitnow.");
+                                + " new job postings from JobTech, Remotive, and Arbeitnow.");
             } else {
                 redirectAttributes.addFlashAttribute("infoMessage",
                         "Marketplace sync complete. All external listings are already indexed and up to date!");

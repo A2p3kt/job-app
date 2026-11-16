@@ -73,7 +73,7 @@ public class JobPosting {
     private String sourceUrl;
 
     /**
-     * Name of the data source provider (e.g., "JobTech", "TheMuse", "Remotive", "ManualSeed").
+     * Name of the data source provider (e.g., "JobTech", "Remotive", "Arbeitnow", "ManualSeed").
      */
     @Column(name = "source_name")
     private String sourceName;

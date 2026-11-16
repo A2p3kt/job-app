@@ -2,12 +2,9 @@ package dev.toluwalase.jobapp.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,7 +28,8 @@ import tools.jackson.databind.ObjectMapper;
 /**
  * Comprehensive unit test suite for JobScraperService.
  * Validates HTML sanitization, keyword tag extraction, category classification,
- * JSON payload ingestion across all 4 APIs, deduplication logic, and zero-crash exception resilience.
+ * JSON payload ingestion across all external APIs, deduplication logic, and
+ * zero-crash exception resilience.
  */
 @ExtendWith(MockitoExtension.class)
 public class JobScraperServiceTest {
@@ -155,27 +153,31 @@ public class JobScraperServiceTest {
     @Test
     @DisplayName("determineCategory should fall back to heuristic title checks when keywords are sparse")
     void testDetermineCategoryHeuristics() {
-        assertEquals(JobCategory.HEALTHCARE, scraperService.determineCategory("Clinical Care Coordinator", "General duties", null));
-        assertEquals(JobCategory.LAW_LEGAL, scraperService.determineCategory("Junior Legal Counsel", "Advising stakeholders", null));
-        assertEquals(JobCategory.SERVICE_OPERATIONS, scraperService.determineCategory("Night Custodian & Cleaner", "Maintaining spaces", null));
-        assertEquals(JobCategory.BUSINESS_FINANCE, scraperService.determineCategory("Payroll Specialist", "Managing biweekly disbursements", null));
+        assertEquals(JobCategory.HEALTHCARE,
+                scraperService.determineCategory("Clinical Care Coordinator", "General duties", null));
+        assertEquals(JobCategory.LAW_LEGAL,
+                scraperService.determineCategory("Junior Legal Counsel", "Advising stakeholders", null));
+        assertEquals(JobCategory.SERVICE_OPERATIONS,
+                scraperService.determineCategory("Night Custodian & Cleaner", "Maintaining spaces", null));
+        assertEquals(JobCategory.BUSINESS_FINANCE,
+                scraperService.determineCategory("Payroll Specialist", "Managing biweekly disbursements", null));
     }
 
     @Test
     @DisplayName("ingestJobTechHits should parse JobTech JSON and save non-duplicate postings")
     void testIngestJobTechHits() throws Exception {
         String json = """
-            [
-              {
-                "id": "jt-101",
-                "headline": "Junior Java Developer",
-                "employer": { "name": "Nordic Soft AB" },
-                "workplace_address": { "municipality": "Stockholm", "country": "Sverige" },
-                "description": { "text": "Join our team working with Java and Spring Boot in Stockholm." },
-                "webpage_url": "https://example.com/jt-101"
-              }
-            ]
-            """;
+                [
+                  {
+                    "id": "jt-101",
+                    "headline": "Junior Java Developer",
+                    "employer": { "name": "Nordic Soft AB" },
+                    "workplace_address": { "municipality": "Stockholm", "country": "Sverige" },
+                    "description": { "text": "Join our team working with Java and Spring Boot in Stockholm." },
+                    "webpage_url": "https://example.com/jt-101"
+                  }
+                ]
+                """;
         JsonNode hits = objectMapper.readTree(json);
 
         when(jobPostingRepository.existsByExternalId("jobtech-jt-101")).thenReturn(false);
@@ -196,52 +198,20 @@ public class JobScraperServiceTest {
     }
 
     @Test
-    @DisplayName("ingestTheMuseResults should parse The Muse JSON and strip HTML in description")
-    void testIngestTheMuseResults() throws Exception {
-        String json = """
-            [
-              {
-                "id": 9901,
-                "name": "Brand Marketing Strategist",
-                "company": { "name": "Global Brands Corp" },
-                "locations": [{ "name": "New York, NY" }],
-                "contents": "<p>Looking for <strong>Brand Strategy</strong> and <em>SEO</em> expert.</p>",
-                "refs": { "landing_page": "https://example.com/muse-9901" }
-              }
-            ]
-            """;
-        JsonNode results = objectMapper.readTree(json);
-
-        when(jobPostingRepository.existsByExternalId("themuse-9901")).thenReturn(false);
-
-        int count = scraperService.ingestTheMuseResults(results, JobCategory.MARKETING);
-        assertEquals(1, count);
-
-        ArgumentCaptor<JobPosting> captor = ArgumentCaptor.forClass(JobPosting.class);
-        verify(jobPostingRepository).save(captor.capture());
-
-        JobPosting saved = captor.getValue();
-        assertEquals("themuse-9901", saved.getExternalId());
-        assertEquals("Brand Marketing Strategist", saved.getTitle());
-        assertEquals("Looking for Brand Strategy and SEO expert.", saved.getDescription());
-        assertEquals("TheMuse", saved.getSourceName());
-    }
-
-    @Test
     @DisplayName("ingestRemotiveJobs should parse Remotive JSON and map remote locations")
     void testIngestRemotiveJobs() throws Exception {
         String json = """
-            [
-              {
-                "id": 8802,
-                "title": "Remote DevOps Cloud Engineer",
-                "company_name": "CloudScale Inc",
-                "candidate_required_location": "Worldwide",
-                "description": "<p>Manage AWS, Docker containers, and CI/CD pipelines.</p>",
-                "url": "https://remotive.com/jobs/8802"
-              }
-            ]
-            """;
+                [
+                  {
+                    "id": 8802,
+                    "title": "Remote DevOps Cloud Engineer",
+                    "company_name": "CloudScale Inc",
+                    "candidate_required_location": "Worldwide",
+                    "description": "<p>Manage AWS, Docker containers, and CI/CD pipelines.</p>",
+                    "url": "https://remotive.com/jobs/8802"
+                  }
+                ]
+                """;
         JsonNode jobs = objectMapper.readTree(json);
 
         when(jobPostingRepository.existsByExternalId("remotive-8802")).thenReturn(false);
@@ -263,18 +233,18 @@ public class JobScraperServiceTest {
     @DisplayName("ingestArbeitnowData should infer JobCategory and parse Arbeitnow postings")
     void testIngestArbeitnowData() throws Exception {
         String json = """
-            [
-              {
-                "slug": "cleaning-supervisor-berlin-7711",
-                "title": "Facility Operations & Cleaning Supervisor",
-                "company_name": "CleanPro Berlin",
-                "location": "Berlin, Germany",
-                "description": "<p>Oversee Commercial Cleaning, Sanitization, and Equipment Maintenance.</p>",
-                "url": "https://arbeitnow.com/jobs/7711",
-                "tags": ["Cleaning", "Maintenance"]
-              }
-            ]
-            """;
+                [
+                  {
+                    "slug": "cleaning-supervisor-berlin-7711",
+                    "title": "Facility Operations & Cleaning Supervisor",
+                    "company_name": "CleanPro Berlin",
+                    "location": "Berlin, Germany",
+                    "description": "<p>Oversee Commercial Cleaning, Sanitization, and Equipment Maintenance.</p>",
+                    "url": "https://arbeitnow.com/jobs/7711",
+                    "tags": ["Cleaning", "Maintenance"]
+                  }
+                ]
+                """;
         JsonNode data = objectMapper.readTree(json);
 
         when(jobPostingRepository.existsByExternalId("arbeitnow-cleaning-supervisor-berlin-7711")).thenReturn(false);
@@ -295,15 +265,15 @@ public class JobScraperServiceTest {
     @DisplayName("existsByExternalId should prevent duplicate postings across all ingestion methods")
     void testDeduplicationAcrossIngestions() throws Exception {
         String json = """
-            [
-              {
-                "id": "duplicate-123",
-                "headline": "Software Engineer",
-                "employer": { "name": "Company" },
-                "description": { "text": "Java" }
-              }
-            ]
-            """;
+                [
+                  {
+                    "id": "duplicate-123",
+                    "headline": "Software Engineer",
+                    "employer": { "name": "Company" },
+                    "description": { "text": "Java" }
+                  }
+                ]
+                """;
         JsonNode hits = objectMapper.readTree(json);
 
         // Mark as existing
