@@ -299,7 +299,7 @@
                 <div>
                     <span class="text-slate-400 block font-medium">Contact:</span>
                     <span class="text-slate-700 font-semibold" th:text="${profile.user != null ? profile.user.email : 'hello@toluwalase.dev'}">hello@toluwalase.dev</span>
-                    <span class="text-slate-500 block" th:text="${profile.phoneNumber}">+358 40 123 4567</span>
+                    <span class="text-slate-500 block" th:text="${profile.phone != null && !profile.phone.isBlank() ? profile.phone : '+358 40 123 4567'}">+358 40 123 4567</span>
                 </div>
                 <div>
                     <span class="text-slate-400 block font-medium">Target Locations:</span>

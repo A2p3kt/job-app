@@ -193,6 +193,24 @@ public class MasterProfile {
         this.phone = phone;
     }
 
+    /**
+     * Alias getter for phone number property access.
+     *
+     * @return Phone number string
+     */
+    public String getPhoneNumber() {
+        return this.phone;
+    }
+
+    /**
+     * Alias setter for phone number property access.
+     *
+     * @param phoneNumber Phone number string
+     */
+    public void setPhoneNumber(String phoneNumber) {
+        this.phone = phoneNumber;
+    }
+
     public String getHeadline() {
         return headline;
     }
