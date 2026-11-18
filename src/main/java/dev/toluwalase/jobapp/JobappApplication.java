@@ -87,27 +87,40 @@ public class JobappApplication {
                         JobPostingRepository jobRepository,
                         ApplicationKitRepository kitRepository) {
                 return (args) -> {
-                        // 1. Seed Demo User & Career Profile
-                        AppUser demoUser = null;
-                        if (userRepository.count() == 0) {
-                                demoUser = new AppUser(
-                                                "tolu",
-                                                "hello@toluwalase.dev",
-                                                SecurityConfig.hashPassword("password123"),
-                                                "LOCAL",
-                                                "ROLE_USER");
-                                userRepository.save(demoUser);
+                        // Guard: verify database is completely empty before adding any demo data
+                        long userCount = userRepository.count();
+                        long profileCount = profileRepository.count();
+                        long itemCount = itemRepository.count();
+                        long jobCount = jobRepository.count();
+                        long kitCount = kitRepository.count();
 
-                                MasterProfile demoProfile = new MasterProfile(
-                                                demoUser,
-                                                JobCategory.TECHNOLOGY,
-                                                "Toluwalase Ayoola",
-                                                "+358 40 123 4567",
-                                                "Lead Cloud Architect & Senior Distributed Systems Engineer",
-                                                "Pragmatic, results-driven software engineer with 6+ years of experience architecting high-throughput distributed microservices, event-driven streaming architectures, and resilient cloud infrastructure using Java 21, Spring Boot 4, Kubernetes, and AWS. Proven track record of scaling low-latency APIs processing 25,000+ req/s, cutting cloud infrastructure costs by 35%, and integrating generative AI to automate mission-critical workflows.",
-                                                "Java 21, Spring Boot 4, Spring Cloud, Kubernetes, Docker, AWS (ECS, EKS, Lambda, RDS), PostgreSQL, Apache Kafka, Redis, Terraform, REST & GraphQL APIs, Microservices, CI/CD, Git, Linux",
-                                                "Helsinki, Espoo, Tampere, Stockholm, Remote",
-                                                "Backend, Cloud, Distributed Systems, Software Engineer, Senior, Lead, Architect");
+                        if (userCount > 0 || profileCount > 0 || itemCount > 0 || jobCount > 0 || kitCount > 0) {
+                                log.info("Database is not empty (Users: {}, Profiles: {}, Items: {}, Jobs: {}, Kits: {}). Skipping initial demo data seeding.",
+                                                userCount, profileCount, itemCount, jobCount, kitCount);
+                                return;
+                        }
+
+                        log.info("Database is empty. Initializing initial demo dataset...");
+
+                        // 1. Seed Demo User & Career Profile
+                        AppUser demoUser = new AppUser(
+                                        "tolu",
+                                        "hello@toluwalase.dev",
+                                        SecurityConfig.hashPassword("password123"),
+                                        "LOCAL",
+                                        "ROLE_USER");
+                        userRepository.save(demoUser);
+
+                        MasterProfile demoProfile = new MasterProfile(
+                                        demoUser,
+                                        JobCategory.TECHNOLOGY,
+                                        "Toluwalase Ayoola",
+                                        "+358 40 123 4567",
+                                        "Lead Cloud Architect & Senior Distributed Systems Engineer",
+                                        "Pragmatic, results-driven software engineer with 6+ years of experience architecting high-throughput distributed microservices, event-driven streaming architectures, and resilient cloud infrastructure using Java 21, Spring Boot 4, Kubernetes, and AWS. Proven track record of scaling low-latency APIs processing 25,000+ req/s, cutting cloud infrastructure costs by 35%, and integrating generative AI to automate mission-critical workflows.",
+                                        "Java 21, Spring Boot 4, Spring Cloud, Kubernetes, Docker, AWS (ECS, EKS, Lambda, RDS), PostgreSQL, Apache Kafka, Redis, Terraform, REST & GraphQL APIs, Microservices, CI/CD, Git, Linux",
+                                        "Helsinki, Espoo, Tampere, Stockholm, Remote",
+                                        "Backend, Cloud, Distributed Systems, Software Engineer, Senior, Lead, Architect");
 
                                 // Quality Experience 1
                                 demoProfile.addItem(new ProfileItem(
@@ -210,13 +223,9 @@ public class JobappApplication {
                                 log.info("Seeded AppUser (ID: {}), MasterProfile (ID: {}, Specialization: {}), and {} ProfileItems into H2!",
                                                 demoUser.getId(), demoProfile.getId(), demoProfile.getSpecialization(),
                                                 itemRepository.count());
-                        } else {
-                                demoUser = userRepository.findByUsername("tolu").orElse(null);
-                        }
 
                         // 2. Seed Multi-Industry Job Postings
-                        if (jobRepository.count() == 0) {
-                                List<JobPosting> sampleJobs = List.of(
+                        List<JobPosting> sampleJobs = List.of(
                                                 // Technology
                                                 new JobPosting(
                                                                 "seed-job-001",
@@ -303,94 +312,91 @@ public class JobappApplication {
 
                                 jobRepository.saveAll(sampleJobs);
                                 log.info("Seeded {} multi-industry JobPostings into H2!", jobRepository.count());
-                        }
 
                         // 3. Seed Sample Application Kits for Demo User
-                        if (demoUser != null && kitRepository.count() == 0) {
-                                JobPosting job1 = jobRepository.findByExternalId("seed-job-001").orElse(null);
-                                JobPosting job2 = jobRepository.findByExternalId("seed-job-002").orElse(null);
+                        JobPosting job1 = jobRepository.findByExternalId("seed-job-001").orElse(null);
+                        JobPosting job2 = jobRepository.findByExternalId("seed-job-002").orElse(null);
 
-                                if (job1 != null) {
-                                        String cv1 = "# Toluwalase Ayoola\n"
-                                                        + "hello@toluwalase.dev | +358 40 123 4567 | Helsinki, Finland | linkedin.com/in/toluwalase\n\n"
-                                                        + "## Professional Summary\n"
-                                                        + "Lead Cloud Architect & Senior Distributed Systems Engineer with 6+ years of experience architecting resilient Java 21 and Spring Boot platforms. Deep expertise in PostgreSQL transactional databases, microservices, and Docker containerization.\n\n"
-                                                        + "## Core Competencies\n"
-                                                        + "- Languages & Frameworks: Java 21, Spring Boot 4, Spring Data JPA, RESTful APIs, Microservices\n"
-                                                        + "- Databases & Messaging: PostgreSQL, Redis, Apache Kafka\n"
-                                                        + "- Cloud & DevOps: Docker, Kubernetes, AWS, Terraform, CI/CD, Linux\n\n"
-                                                        + "## Professional Experience\n"
-                                                        + "### Lead Backend Engineer & Distributed Systems Architect\n"
-                                                        + "**Nordic Cloud Platforms Oy** | Helsinki, Finland | 2022-03 – Present\n"
-                                                        + "- Architected microservices in Java 21 and Spring Boot handling 25,000+ req/s with 99.99% uptime.\n"
-                                                        + "- Containerized mission-critical services using Docker and orchestrated deployments on Kubernetes.\n"
-                                                        + "- Designed PostgreSQL schema migrations and optimized query execution with Spring Data JPA.\n\n"
-                                                        + "### Senior Java Software Engineer\n"
-                                                        + "**FinTech Solutions Nordics** | Espoo, Finland | 2019-08 – 2022-02\n"
-                                                        + "- Built event-driven data streaming pipelines with Apache Kafka, Spring Boot, and PostgreSQL.\n"
-                                                        + "- Slashed P99 database query response latency from 450ms down to 28ms using Redis caching.\n\n"
-                                                        + "## Education\n"
-                                                        + "- **M.Sc. in Computer Science (Distributed Systems)**, Aalto University (2017 – 2019, Honors)\n"
-                                                        + "- **B.Sc. in Software Engineering**, University of Helsinki (2014 – 2017, Magna Cum Laude)\n\n"
-                                                        + "## Certifications\n"
-                                                        + "- AWS Certified Solutions Architect — Professional (2023 – 2026)\n"
-                                                        + "- Certified Kubernetes Administrator (CKA) (2023 – 2026)\n"
-                                                        + "- Oracle Certified Professional: Java SE 21 Developer";
+                        if (job1 != null) {
+                                String cv1 = "# Toluwalase Ayoola\n"
+                                                + "hello@toluwalase.dev | +358 40 123 4567 | Helsinki, Finland | linkedin.com/in/toluwalase\n\n"
+                                                + "## Professional Summary\n"
+                                                + "Lead Cloud Architect & Senior Distributed Systems Engineer with 6+ years of experience architecting resilient Java 21 and Spring Boot platforms. Deep expertise in PostgreSQL transactional databases, microservices, and Docker containerization.\n\n"
+                                                + "## Core Competencies\n"
+                                                + "- Languages & Frameworks: Java 21, Spring Boot 4, Spring Data JPA, RESTful APIs, Microservices\n"
+                                                + "- Databases & Messaging: PostgreSQL, Redis, Apache Kafka\n"
+                                                + "- Cloud & DevOps: Docker, Kubernetes, AWS, Terraform, CI/CD, Linux\n\n"
+                                                + "## Professional Experience\n"
+                                                + "### Lead Backend Engineer & Distributed Systems Architect\n"
+                                                + "**Nordic Cloud Platforms Oy** | Helsinki, Finland | 2022-03 – Present\n"
+                                                + "- Architected microservices in Java 21 and Spring Boot handling 25,000+ req/s with 99.99% uptime.\n"
+                                                + "- Containerized mission-critical services using Docker and orchestrated deployments on Kubernetes.\n"
+                                                + "- Designed PostgreSQL schema migrations and optimized query execution with Spring Data JPA.\n\n"
+                                                + "### Senior Java Software Engineer\n"
+                                                + "**FinTech Solutions Nordics** | Espoo, Finland | 2019-08 – 2022-02\n"
+                                                + "- Built event-driven data streaming pipelines with Apache Kafka, Spring Boot, and PostgreSQL.\n"
+                                                + "- Slashed P99 database query response latency from 450ms down to 28ms using Redis caching.\n\n"
+                                                + "## Education\n"
+                                                + "- **M.Sc. in Computer Science (Distributed Systems)**, Aalto University (2017 – 2019, Honors)\n"
+                                                + "- **B.Sc. in Software Engineering**, University of Helsinki (2014 – 2017, Magna Cum Laude)\n\n"
+                                                + "## Certifications\n"
+                                                + "- AWS Certified Solutions Architect — Professional (2023 – 2026)\n"
+                                                + "- Certified Kubernetes Administrator (CKA) (2023 – 2026)\n"
+                                                + "- Oracle Certified Professional: Java SE 21 Developer";
 
-                                        String cl1 = "Dear Hiring Team at Nordic Financial Technologies,\n\n"
-                                                        + "I am writing to express my enthusiastic interest in the Backend Developer position at Nordic Financial Technologies. With over six years of hands-on experience designing and scaling resilient backend platforms with Java 21 and Spring Boot, I am eager to contribute immediately to your core platform engineering efforts.\n\n"
-                                                        + "In my recent role as Lead Backend Engineer at Nordic Cloud Platforms Oy, I architected distributed microservices processing more than 25,000 requests per second with high availability. I specialize in designing transactional data models in PostgreSQL, optimizing ORM layers with Spring Data JPA, and packaging services into lightweight Docker containers for seamless deployment. My background directly aligns with your technical stack and engineering standards.\n\n"
-                                                        + "I would welcome the opportunity to discuss how my technical leadership and microservices experience can help Nordic Financial Technologies scale its financial infrastructure. Thank you for your time and consideration.\n\n"
-                                                        + "Warm regards,\n\n"
-                                                        + "Toluwalase Ayoola\n"
-                                                        + "hello@toluwalase.dev | +358 40 123 4567";
+                                String cl1 = "Dear Hiring Team at Nordic Financial Technologies,\n\n"
+                                                + "I am writing to express my enthusiastic interest in the Backend Developer position at Nordic Financial Technologies. With over six years of hands-on experience designing and scaling resilient backend platforms with Java 21 and Spring Boot, I am eager to contribute immediately to your core platform engineering efforts.\n\n"
+                                                + "In my recent role as Lead Backend Engineer at Nordic Cloud Platforms Oy, I architected distributed microservices processing more than 25,000 requests per second with high availability. I specialize in designing transactional data models in PostgreSQL, optimizing ORM layers with Spring Data JPA, and packaging services into lightweight Docker containers for seamless deployment. My background directly aligns with your technical stack and engineering standards.\n\n"
+                                                + "I would welcome the opportunity to discuss how my technical leadership and microservices experience can help Nordic Financial Technologies scale its financial infrastructure. Thank you for your time and consideration.\n\n"
+                                                + "Warm regards,\n\n"
+                                                + "Toluwalase Ayoola\n"
+                                                + "hello@toluwalase.dev | +358 40 123 4567";
 
-                                        ApplicationKit kit1 = new ApplicationKit(
-                                                        demoUser,
-                                                        job1,
-                                                        96,
-                                                        "Exceptional alignment with Java 21 and Spring Boot stack. Deep experience in PostgreSQL transactional databases, Docker containerization, RESTful microservices, and high-availability cloud platforms.",
-                                                        cv1,
-                                                        cl1,
-                                                        "FINALIZED");
-                                        kitRepository.save(kit1);
-                                }
-
-                                if (job2 != null) {
-                                        String cv2 = "# Toluwalase Ayoola\n"
-                                                        + "hello@toluwalase.dev | +358 40 123 4567 | Helsinki, Finland | linkedin.com/in/toluwalase\n\n"
-                                                        + "## Professional Summary\n"
-                                                        + "Senior Cloud & DevOps Engineer with 6+ years of experience designing and managing scalable cloud infrastructure on AWS. Certified Kubernetes Administrator (CKA) and AWS Certified Solutions Architect Professional.\n\n"
-                                                        + "## Core Competencies\n"
-                                                        + "- Cloud Architecture: AWS (ECS, EKS, Lambda, RDS, S3, IAM, CloudWatch)\n"
-                                                        + "- Infrastructure as Code: Terraform, Docker, Kubernetes, Linux administration\n"
-                                                        + "- CI/CD & Automation: GitHub Actions, Python scripting, Bash, monitoring\n\n"
-                                                        + "## Experience Highlights\n"
-                                                        + "- Led containerized cloud migration to Amazon EKS using Terraform, cutting infrastructure cost by 35%.\n"
-                                                        + "- Designed zero-downtime CI/CD deployment pipelines and automated infrastructure provisioning.\n"
-                                                        + "- Implemented infrastructure monitoring and automated alerting using Prometheus and Grafana.";
-
-                                        String cl2 = "Dear Aura Cloud Solutions Hiring Team,\n\n"
-                                                        + "I am thrilled to apply for the Cloud Infrastructure & DevOps Engineer position at Aura Cloud Solutions. Having engineered automated AWS architectures and managed containerized workloads across my career, I am confident in my ability to elevate your cloud infrastructure.\n\n"
-                                                        + "Holding both the AWS Certified Solutions Architect — Professional and Certified Kubernetes Administrator (CKA) certifications, I bring deep practical experience in Terraform automation, Docker packaging, and resilient Linux system administration. At Nordic Cloud Platforms Oy, I led our cloud migration to Kubernetes on AWS, drastically increasing developer velocity while improving system fault tolerance.\n\n"
-                                                        + "I look forward to discussing how my cloud infrastructure and automation expertise can support Aura Cloud's mission.\n\n"
-                                                        + "Sincerely,\n\n"
-                                                        + "Toluwalase Ayoola\n"
-                                                        + "hello@toluwalase.dev | +358 40 123 4567";
-
-                                        ApplicationKit kit2 = new ApplicationKit(
-                                                        demoUser,
-                                                        job2,
-                                                        92,
-                                                        "Outstanding match for AWS infrastructure, Docker containerization, CI/CD automation, and Linux administration. Validated by AWS Certified Solutions Architect and CKA credentials.",
-                                                        cv2,
-                                                        cl2,
-                                                        "DRAFT");
-                                        kitRepository.save(kit2);
-                                }
-
-                                log.info("Seeded {} sample ApplicationKits into H2!", kitRepository.count());
+                                ApplicationKit kit1 = new ApplicationKit(
+                                                demoUser,
+                                                job1,
+                                                96,
+                                                "Exceptional alignment with Java 21 and Spring Boot stack. Deep experience in PostgreSQL transactional databases, Docker containerization, RESTful microservices, and high-availability cloud platforms.",
+                                                cv1,
+                                                cl1,
+                                                "FINALIZED");
+                                kitRepository.save(kit1);
                         }
+
+                        if (job2 != null) {
+                                String cv2 = "# Toluwalase Ayoola\n"
+                                                + "hello@toluwalase.dev | +358 40 123 4567 | Helsinki, Finland | linkedin.com/in/toluwalase\n\n"
+                                                + "## Professional Summary\n"
+                                                + "Senior Cloud & DevOps Engineer with 6+ years of experience designing and managing scalable cloud infrastructure on AWS. Certified Kubernetes Administrator (CKA) and AWS Certified Solutions Architect Professional.\n\n"
+                                                + "## Core Competencies\n"
+                                                + "- Cloud Architecture: AWS (ECS, EKS, Lambda, RDS, S3, IAM, CloudWatch)\n"
+                                                + "- Infrastructure as Code: Terraform, Docker, Kubernetes, Linux administration\n"
+                                                + "- CI/CD & Automation: GitHub Actions, Python scripting, Bash, monitoring\n\n"
+                                                + "## Experience Highlights\n"
+                                                + "- Led containerized cloud migration to Amazon EKS using Terraform, cutting infrastructure cost by 35%.\n"
+                                                + "- Designed zero-downtime CI/CD deployment pipelines and automated infrastructure provisioning.\n"
+                                                + "- Implemented infrastructure monitoring and automated alerting using Prometheus and Grafana.";
+
+                                String cl2 = "Dear Aura Cloud Solutions Hiring Team,\n\n"
+                                                + "I am thrilled to apply for the Cloud Infrastructure & DevOps Engineer position at Aura Cloud Solutions. Having engineered automated AWS architectures and managed containerized workloads across my career, I am confident in my ability to elevate your cloud infrastructure.\n\n"
+                                                + "Holding both the AWS Certified Solutions Architect — Professional and Certified Kubernetes Administrator (CKA) certifications, I bring deep practical experience in Terraform automation, Docker packaging, and resilient Linux system administration. At Nordic Cloud Platforms Oy, I led our cloud migration to Kubernetes on AWS, drastically increasing developer velocity while improving system fault tolerance.\n\n"
+                                                + "I look forward to discussing how my cloud infrastructure and automation expertise can support Aura Cloud's mission.\n\n"
+                                                + "Sincerely,\n\n"
+                                                + "Toluwalase Ayoola\n"
+                                                + "hello@toluwalase.dev | +358 40 123 4567";
+
+                                ApplicationKit kit2 = new ApplicationKit(
+                                                demoUser,
+                                                job2,
+                                                92,
+                                                "Outstanding match for AWS infrastructure, Docker containerization, CI/CD automation, and Linux administration. Validated by AWS Certified Solutions Architect and CKA credentials.",
+                                                cv2,
+                                                cl2,
+                                                "DRAFT");
+                                kitRepository.save(kit2);
+                        }
+
+                        log.info("Seeded {} sample ApplicationKits into H2!", kitRepository.count());
                 };
         }
 }

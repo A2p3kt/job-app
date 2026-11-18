@@ -1,12 +1,15 @@
 package dev.toluwalase.jobapp;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import dev.toluwalase.jobapp.domain.AppUserRepository;
 import dev.toluwalase.jobapp.domain.ApplicationKitRepository;
 import dev.toluwalase.jobapp.domain.JobPostingRepository;
 import dev.toluwalase.jobapp.domain.MasterProfileRepository;
@@ -55,6 +58,12 @@ class JobappApplicationTests {
     @Autowired
     private KitApiController kitApiController;
 
+    @Autowired
+    private AppUserRepository appUserRepository;
+
+    @Autowired
+    private CommandLineRunner demoDataRunner;
+
     @Test
     @DisplayName("Context loads successfully and all key service/web beans are injected")
     void contextLoads() {
@@ -68,5 +77,22 @@ class JobappApplicationTests {
         assertNotNull(profileApiController);
         assertNotNull(jobApiController);
         assertNotNull(kitApiController);
+        assertNotNull(appUserRepository);
+        assertNotNull(demoDataRunner);
+    }
+
+    @Test
+    @DisplayName("demoData runner skips execution when database already contains records")
+    void testDemoDataSkipsWhenDatabaseNotEmpty() throws Exception {
+        long initialUsers = appUserRepository.count();
+        long initialJobs = jobPostingRepository.count();
+        long initialKits = applicationKitRepository.count();
+
+        // Run the runner again on populated database
+        demoDataRunner.run(new String[0]);
+
+        assertEquals(initialUsers, appUserRepository.count());
+        assertEquals(initialJobs, jobPostingRepository.count());
+        assertEquals(initialKits, applicationKitRepository.count());
     }
 }
