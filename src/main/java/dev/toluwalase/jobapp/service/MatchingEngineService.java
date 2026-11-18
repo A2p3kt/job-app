@@ -9,8 +9,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import dev.toluwalase.jobapp.domain.JobCategory;
@@ -22,21 +20,24 @@ import dev.toluwalase.jobapp.domain.ProfileItem;
 import dev.toluwalase.jobapp.domain.ProfileItemType;
 
 /**
- * Domain-aware matching engine service implementing a two-tier scoring algorithm (0–100 scale).
+ * Domain-aware matching engine service implementing a two-tier scoring
+ * algorithm (0–100 scale).
  * <p>
  * Evaluates candidate fit across two distinct tiers:
  * <ul>
- *   <li><b>Tier 1: Preference Alignment (40% Weight):</b> Location and preferred role tag overlap.</li>
- *   <li><b>Tier 2: Profile Evidence Overlap (60% Weight):</b> Candidate skills list, career summary,
- *       and structured ProfileItem evidence (experiences, education, certifications, projects)
- *       matched against job requirements and extracted tags.</li>
+ * <li><b>Tier 1: Preference Alignment (40% Weight):</b> Location and preferred
+ * role tag overlap.</li>
+ * <li><b>Tier 2: Profile Evidence Overlap (60% Weight):</b> Candidate skills
+ * list, career summary,
+ * and structured ProfileItem evidence (experiences, education, certifications,
+ * projects)
+ * matched against job requirements and extracted tags.</li>
  * </ul>
- * Also incorporates specialization category prioritization with transparent rationale generation.
+ * Also incorporates specialization category prioritization with transparent
+ * rationale generation.
  */
 @Service
 public class MatchingEngineService {
-
-    private static final Logger log = LoggerFactory.getLogger(MatchingEngineService.class);
 
     private final JobPostingRepository jobPostingRepository;
 
@@ -50,7 +51,8 @@ public class MatchingEngineService {
     }
 
     /**
-     * Scores and ranks all persisted job postings against a candidate's MasterProfile.
+     * Scores and ranks all persisted job postings against a candidate's
+     * MasterProfile.
      * Sorts descending by match score.
      *
      * @param profile Candidate profile
@@ -65,7 +67,8 @@ public class MatchingEngineService {
     }
 
     /**
-     * Scores and ranks a filtered list of jobs matching a specific industry category.
+     * Scores and ranks a filtered list of jobs matching a specific industry
+     * category.
      *
      * @param profile  Candidate profile
      * @param category Target industry category
@@ -82,11 +85,13 @@ public class MatchingEngineService {
     }
 
     /**
-     * Evaluates a provided collection of JobPosting records against a MasterProfile.
+     * Evaluates a provided collection of JobPosting records against a
+     * MasterProfile.
      *
      * @param profile Candidate profile
      * @param jobs    List of JobPosting entities to evaluate
-     * @return Ranked list of JobMatchDto records sorted from highest match score to lowest
+     * @return Ranked list of JobMatchDto records sorted from highest match score to
+     *         lowest
      */
     public List<JobMatchDto> rankJobsForProfile(MasterProfile profile, List<JobPosting> jobs) {
         if (profile == null || jobs == null || jobs.isEmpty()) {
@@ -103,7 +108,8 @@ public class MatchingEngineService {
     }
 
     /**
-     * Calculates the two-tier match score (0–100) for a single job against the candidate's profile.
+     * Calculates the two-tier match score (0–100) for a single job against the
+     * candidate's profile.
      *
      * @param profile Candidate MasterProfile
      * @param job     Target JobPosting
@@ -146,7 +152,8 @@ public class MatchingEngineService {
         if (isSpecializationMatch) {
             finalScore = rawCompositeScore;
         } else {
-            // Apply 40% penalty for jobs outside the candidate's active specialization vertical
+            // Apply 40% penalty for jobs outside the candidate's active specialization
+            // vertical
             finalScore = (int) Math.round(rawCompositeScore * 0.60);
         }
 
@@ -158,7 +165,8 @@ public class MatchingEngineService {
     }
 
     /**
-     * Evaluates location alignment between candidate preferences and job listing (0–20 points).
+     * Evaluates location alignment between candidate preferences and job listing
+     * (0–20 points).
      */
     private int scoreLocationPreference(MasterProfile profile, JobPosting job, Set<String> rationale) {
         String jobLoc = (job.getLocation() != null) ? job.getLocation().toLowerCase() : "";
@@ -181,7 +189,8 @@ public class MatchingEngineService {
         for (String preferred : candidatesLocs) {
             String lowerPreferred = preferred.toLowerCase();
             // Check remote compatibility
-            if (lowerPreferred.contains("remote") && (jobLoc.contains("remote") || jobLoc.contains("hybrid") || jobLoc.contains("worldwide"))) {
+            if (lowerPreferred.contains("remote")
+                    && (jobLoc.contains("remote") || jobLoc.contains("hybrid") || jobLoc.contains("worldwide"))) {
                 rationale.add("Location Match: Remote / Hybrid");
                 return 20;
             }
@@ -196,7 +205,8 @@ public class MatchingEngineService {
     }
 
     /**
-     * Evaluates candidate preferred roles and domain tags against job listing (0–20 points).
+     * Evaluates candidate preferred roles and domain tags against job listing (0–20
+     * points).
      */
     private int scoreTagPreference(MasterProfile profile, JobPosting job, Set<String> rationale) {
         String preferredTags = profile.getPreferredTags();
@@ -231,7 +241,8 @@ public class MatchingEngineService {
     }
 
     /**
-     * Evaluates direct skill overlap between candidate skillsList and job extractedTags (0–40 points).
+     * Evaluates direct skill overlap between candidate skillsList and job
+     * extractedTags (0–40 points).
      */
     private int scoreSkillsEvidence(MasterProfile profile, JobPosting job, Set<String> rationale) {
         String skillsList = profile.getSkillsList();
@@ -273,7 +284,8 @@ public class MatchingEngineService {
                     if (!found) {
                         // Check if candidate skill is a word in the job tag or vice versa
                         for (String skill : candidateSkills) {
-                            if (jobTag.toLowerCase().contains(skill.toLowerCase()) || skill.toLowerCase().contains(jobTag.toLowerCase())) {
+                            if (jobTag.toLowerCase().contains(skill.toLowerCase())
+                                    || skill.toLowerCase().contains(jobTag.toLowerCase())) {
                                 matchedTags++;
                                 rationale.add("Skill Match: " + jobTag);
                                 break;
@@ -288,7 +300,8 @@ public class MatchingEngineService {
                 // Check for additional candidate skills mentioned in description
                 for (String skill : candidateSkills) {
                     if (rationale.stream().noneMatch(r -> r.equalsIgnoreCase("Skill Match: " + skill))) {
-                        Pattern p = Pattern.compile("(?i)(?<=^|[^a-zA-Z0-9])" + Pattern.quote(skill) + "(?=[^a-zA-Z0-9]|$)");
+                        Pattern p = Pattern
+                                .compile("(?i)(?<=^|[^a-zA-Z0-9])" + Pattern.quote(skill) + "(?=[^a-zA-Z0-9]|$)");
                         if (p.matcher(jobFullText).find()) {
                             score += 3;
                             rationale.add("Skill in Description: " + skill);
@@ -300,7 +313,8 @@ public class MatchingEngineService {
             }
         }
 
-        // Fallback when job has no extractedTags: direct regex matching of candidate skills in description/title
+        // Fallback when job has no extractedTags: direct regex matching of candidate
+        // skills in description/title
         int score = 0;
         for (String skill : candidateSkills) {
             Pattern p = Pattern.compile("(?i)(?<=^|[^a-zA-Z0-9])" + Pattern.quote(skill) + "(?=[^a-zA-Z0-9]|$)");
@@ -314,7 +328,8 @@ public class MatchingEngineService {
     }
 
     /**
-     * Evaluates concrete proof in ProfileItem entities (Experience, Education, Certification, Project)
+     * Evaluates concrete proof in ProfileItem entities (Experience, Education,
+     * Certification, Project)
      * and candidate summary text (0–20 points).
      */
     private int scoreBackgroundEvidence(MasterProfile profile, JobPosting job, Set<String> rationale) {
@@ -401,4 +416,3 @@ public class MatchingEngineService {
         return Math.min(20, score);
     }
 }
-

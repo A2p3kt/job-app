@@ -71,7 +71,6 @@ public class TailoringService {
     /**
      * Explicit constructor injection without Lombok.
      */
-    @Autowired
     public TailoringService(ApplicationKitRepository kitRepository,
             JobPostingRepository jobRepository,
             AppUserRepository userRepository,
@@ -204,7 +203,8 @@ public class TailoringService {
     }
 
     /**
-     * Retrieves all application kits created by a candidate, ordered by most recently updated.
+     * Retrieves all application kits created by a candidate, ordered by most
+     * recently updated.
      *
      * @param userId Primary key of the candidate AppUser
      * @return List of ApplicationKit entities

@@ -33,7 +33,8 @@ import dev.toluwalase.jobapp.service.ProfileService;
 
 /**
  * Controller slice unit tests for AuthWebController.
- * Validates Sign In, Sign Up, validation error branches, password hashing, and Sign Out.
+ * Validates Sign In, Sign Up, validation error branches, password hashing, and
+ * Sign Out.
  */
 @ExtendWith(MockitoExtension.class)
 public class AuthWebControllerTest {
@@ -89,8 +90,8 @@ public class AuthWebControllerTest {
         when(userRepository.findByUsername("tolu")).thenReturn(Optional.of(existingUser));
 
         mockMvc.perform(post("/signin")
-                        .param("username", "tolu")
-                        .param("password", "secret123"))
+                .param("username", "tolu")
+                .param("password", "secret123"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/dashboard"))
                 .andExpect(flash().attributeExists("successMessage"));
@@ -103,8 +104,8 @@ public class AuthWebControllerTest {
         when(userRepository.findByEmail("tolu@example.com")).thenReturn(Optional.of(existingUser));
 
         mockMvc.perform(post("/signin")
-                        .param("username", "tolu@example.com")
-                        .param("password", "secret123"))
+                .param("username", "tolu@example.com")
+                .param("password", "secret123"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/dashboard"))
                 .andExpect(flash().attributeExists("successMessage"));
@@ -114,8 +115,8 @@ public class AuthWebControllerTest {
     @DisplayName("POST /signin with blank fields re-renders signin with error")
     void testProcessSignInBlankCredentials() throws Exception {
         mockMvc.perform(post("/signin")
-                        .param("username", "")
-                        .param("password", ""))
+                .param("username", "")
+                .param("password", ""))
                 .andExpect(status().isOk())
                 .andExpect(view().name("signin"))
                 .andExpect(model().attributeExists("errorMessage"));
@@ -127,8 +128,8 @@ public class AuthWebControllerTest {
         when(userRepository.findByUsername("tolu")).thenReturn(Optional.of(existingUser));
 
         mockMvc.perform(post("/signin")
-                        .param("username", "tolu")
-                        .param("password", "wrongPassword"))
+                .param("username", "tolu")
+                .param("password", "wrongPassword"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("signin"))
                 .andExpect(model().attributeExists("errorMessage"));
@@ -141,8 +142,8 @@ public class AuthWebControllerTest {
         when(userRepository.findByEmail("nonexistent")).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/signin")
-                        .param("username", "nonexistent")
-                        .param("password", "secret123"))
+                .param("username", "nonexistent")
+                .param("password", "secret123"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("signin"))
                 .andExpect(model().attributeExists("errorMessage"));
@@ -176,30 +177,32 @@ public class AuthWebControllerTest {
 
         AppUser created = new AppUser("newuser", "newuser@example.com", "hash", "LOCAL", "ROLE_USER");
         created.setId(2L);
-        when(profileService.createUserWithProfile(eq("newuser"), eq("newuser@example.com"), any(), eq(JobCategory.MARKETING)))
+        when(profileService.createUserWithProfile(eq("newuser"), eq("newuser@example.com"), any(),
+                eq(JobCategory.MARKETING)))
                 .thenReturn(created);
 
         mockMvc.perform(post("/signup")
-                        .param("username", "newuser")
-                        .param("email", "newuser@example.com")
-                        .param("password", "secure123")
-                        .param("confirmPassword", "secure123")
-                        .param("specialization", "MARKETING"))
+                .param("username", "newuser")
+                .param("email", "newuser@example.com")
+                .param("password", "secure123")
+                .param("confirmPassword", "secure123")
+                .param("specialization", "MARKETING"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/profile?onboarding=true"))
                 .andExpect(flash().attributeExists("successMessage"));
 
-        verify(profileService).createUserWithProfile(eq("newuser"), eq("newuser@example.com"), any(), eq(JobCategory.MARKETING));
+        verify(profileService).createUserWithProfile(eq("newuser"), eq("newuser@example.com"), any(),
+                eq(JobCategory.MARKETING));
     }
 
     @Test
     @DisplayName("POST /signup with short username fails validation")
     void testProcessSignUpShortUsername() throws Exception {
         mockMvc.perform(post("/signup")
-                        .param("username", "ab")
-                        .param("email", "ab@example.com")
-                        .param("password", "secure123")
-                        .param("confirmPassword", "secure123"))
+                .param("username", "ab")
+                .param("email", "ab@example.com")
+                .param("password", "secure123")
+                .param("confirmPassword", "secure123"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("signup"))
                 .andExpect(model().attributeExists("errorMessage"));
@@ -211,10 +214,10 @@ public class AuthWebControllerTest {
     @DisplayName("POST /signup with mismatched passwords fails validation")
     void testProcessSignUpPasswordMismatch() throws Exception {
         mockMvc.perform(post("/signup")
-                        .param("username", "alexdev")
-                        .param("email", "alex@example.com")
-                        .param("password", "secure123")
-                        .param("confirmPassword", "different123"))
+                .param("username", "alexdev")
+                .param("email", "alex@example.com")
+                .param("password", "secure123")
+                .param("confirmPassword", "different123"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("signup"))
                 .andExpect(model().attributeExists("errorMessage"));
@@ -228,10 +231,10 @@ public class AuthWebControllerTest {
         when(userRepository.existsByUsername("tolu")).thenReturn(true);
 
         mockMvc.perform(post("/signup")
-                        .param("username", "tolu")
-                        .param("email", "other@example.com")
-                        .param("password", "secure123")
-                        .param("confirmPassword", "secure123"))
+                .param("username", "tolu")
+                .param("email", "other@example.com")
+                .param("password", "secure123")
+                .param("confirmPassword", "secure123"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("signup"))
                 .andExpect(model().attributeExists("errorMessage"));
