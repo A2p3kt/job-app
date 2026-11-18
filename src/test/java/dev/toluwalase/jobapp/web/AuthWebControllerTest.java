@@ -73,14 +73,14 @@ public class AuthWebControllerTest {
     }
 
     @Test
-    @DisplayName("GET /signin redirects to /profile when already authenticated in session")
+    @DisplayName("GET /signin redirects to /dashboard when already authenticated in session")
     void testShowSignInAlreadyAuthenticated() throws Exception {
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("username", "tolu");
 
         mockMvc.perform(get("/signin").session(session))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profile"));
+                .andExpect(redirectedUrl("/dashboard"));
     }
 
     @Test
@@ -158,18 +158,18 @@ public class AuthWebControllerTest {
     }
 
     @Test
-    @DisplayName("GET /signup redirects to /profile when already authenticated in session")
+    @DisplayName("GET /signup redirects to /dashboard when already authenticated in session")
     void testShowSignUpAlreadyAuthenticated() throws Exception {
         MockHttpSession session = new MockHttpSession();
         session.setAttribute("username", "tolu");
 
         mockMvc.perform(get("/signup").session(session))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profile"));
+                .andExpect(redirectedUrl("/dashboard"));
     }
 
     @Test
-    @DisplayName("POST /signup with valid data creates user and profile, sets session and redirects")
+    @DisplayName("POST /signup with valid data creates user and profile, sets session and redirects to onboarding")
     void testProcessSignUpSuccess() throws Exception {
         when(userRepository.existsByUsername("newuser")).thenReturn(false);
         when(userRepository.existsByEmail("newuser@example.com")).thenReturn(false);
@@ -186,7 +186,7 @@ public class AuthWebControllerTest {
                         .param("confirmPassword", "secure123")
                         .param("specialization", "MARKETING"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profile"))
+                .andExpect(redirectedUrl("/profile?onboarding=true"))
                 .andExpect(flash().attributeExists("successMessage"));
 
         verify(profileService).createUserWithProfile(eq("newuser"), eq("newuser@example.com"), any(), eq(JobCategory.MARKETING));

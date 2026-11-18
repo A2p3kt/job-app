@@ -66,13 +66,15 @@ public class ProfileWebController {
      * Displays the Master Profile form, specialization selector, categorized items, and add-item modal.
      * Resolves the authenticated user, or falls back to the default seed user ("tolu") during development.
      *
-     * @param model     Spring MVC Model for UI data binding
-     * @param principal Current authenticated user principal
-     * @param session   Current HTTP session for session-based authentication
+     * @param onboarding Flag indicating if user is in initial onboarding journey
+     * @param model      Spring MVC Model for UI data binding
+     * @param principal  Current authenticated user principal
+     * @param session    Current HTTP session for session-based authentication
      * @return Template view name "profile"
      */
     @GetMapping("/profile")
-    public String showProfile(Model model, Principal principal, HttpSession session) {
+    public String showProfile(@RequestParam(value = "onboarding", required = false, defaultValue = "false") boolean onboarding,
+                              Model model, Principal principal, HttpSession session) {
         String username = resolveUsername(principal, session);
         MasterProfile profile = profileService.getOrCreateProfile(username);
 
@@ -80,6 +82,7 @@ public class ProfileWebController {
         model.addAttribute("categories", JobCategory.values());
         model.addAttribute("itemTypes", ProfileItemType.values());
         model.addAttribute("newItem", new ProfileItem());
+        model.addAttribute("onboarding", onboarding);
 
         // Group items by type for organized display
         model.addAttribute("experienceItems", profileService.getItemsByType(profile.getId(), ProfileItemType.EXPERIENCE));
@@ -95,14 +98,17 @@ public class ProfileWebController {
      *
      * @param profileForm        Bound form entity containing user edits
      * @param bindingResult      Validation result for profileForm
+     * @param action             Action target (e.g. "dashboard" to redirect to dashboard upon save)
      * @param redirectAttributes Flash attributes for feedback notifications
      * @param model              Spring MVC Model for error rendering
      * @param principal          Current authenticated user
-     * @return Redirect to /profile upon success or "profile" view on validation error
+     * @param session            Current HTTP session
+     * @return Redirect to /dashboard, /profile, or "profile" view on validation error
      */
     @PostMapping("/profile/update")
     public String updateProfile(@Valid @ModelAttribute("profile") MasterProfile profileForm,
                                 BindingResult bindingResult,
+                                @RequestParam(value = "action", required = false) String action,
                                 RedirectAttributes redirectAttributes,
                                 Model model,
                                 Principal principal,
@@ -124,6 +130,9 @@ public class ProfileWebController {
 
         profileService.updateProfile(profileForm.getId(), profileForm);
         redirectAttributes.addFlashAttribute("successMessage", "Master Profile updated successfully!");
+        if ("dashboard".equalsIgnoreCase(action)) {
+            return "redirect:/dashboard";
+        }
         return "redirect:/profile";
     }
 

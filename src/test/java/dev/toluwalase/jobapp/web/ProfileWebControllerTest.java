@@ -116,6 +116,26 @@ public class ProfileWebControllerTest {
     }
 
     @Test
+    @DisplayName("POST /profile/update with action=dashboard redirects to /dashboard")
+    void testUpdateProfileAndRedirectDashboard() throws Exception {
+        mockMvc.perform(post("/profile/update")
+                        .param("id", "10")
+                        .param("fullName", "Toluwalase Ayoola")
+                        .param("specialization", "TECHNOLOGY")
+                        .param("headline", "Dev")
+                        .param("summary", "Bio")
+                        .param("skillsList", "Java, Spring Boot")
+                        .param("preferredLocations", "Helsinki")
+                        .param("preferredTags", "Backend")
+                        .param("action", "dashboard"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/dashboard"))
+                .andExpect(flash().attributeExists("successMessage"));
+
+        verify(profileService).updateProfile(eq(10L), any(MasterProfile.class));
+    }
+
+    @Test
     @DisplayName("POST /profile/update re-renders profile view on validation failure")
     void testUpdateProfileValidationFailure() throws Exception {
         when(profileService.getOrCreateProfile("tolu")).thenReturn(testProfile);

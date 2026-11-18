@@ -37,12 +37,12 @@ public class AuthWebController {
 
     /**
      * Renders the Sign In page.
-     * Redirects to /profile if user is already authenticated.
+     * Redirects to /dashboard if user is already authenticated.
      */
     @GetMapping({"/signin", "/login"})
     public String showSignIn(Model model, HttpSession session) {
         if (session != null && session.getAttribute("username") != null) {
-            return "redirect:/profile";
+            return "redirect:/dashboard";
         }
         return "signin";
     }
@@ -80,7 +80,8 @@ public class AuthWebController {
         session.setAttribute("currentUser", user);
 
         log.info("User '{}' signed in successfully.", user.getUsername());
-        redirectAttributes.addFlashAttribute("successMessage", "Welcome back, " + user.getUsername() + "!");
+        redirectAttributes.addFlashAttribute("successMessage",
+                "Welcome back, " + user.getUsername() + "! Review your CV details below or proceed to your dashboard.");
         return "redirect:/profile";
     }
 
@@ -90,7 +91,7 @@ public class AuthWebController {
     @GetMapping({"/signup", "/register"})
     public String showSignUp(Model model, HttpSession session) {
         if (session != null && session.getAttribute("username") != null) {
-            return "redirect:/profile";
+            return "redirect:/dashboard";
         }
         model.addAttribute("categories", JobCategory.values());
         return "signup";
@@ -164,8 +165,8 @@ public class AuthWebController {
 
         log.info("New candidate registered: username='{}', category='{}'", cleanUsername, category);
         redirectAttributes.addFlashAttribute("successMessage",
-                "Account created successfully! Welcome to JobApp, " + createdUser.getUsername() + ".");
-        return "redirect:/profile";
+                "Account created successfully! Welcome to JobApp, " + createdUser.getUsername() + ". Please fill in your CV details below to start tailoring applications.");
+        return "redirect:/profile?onboarding=true";
     }
 
     /**
