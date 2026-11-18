@@ -308,24 +308,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=prod
 
 ---
 
-## 9. Course & Grading Compliance Checklist (Grade 5 Target)
-
-* [x] **Strict 3-Package Architecture:** Code is strictly segregated into `domain`, `service`, and `web`. Zero unauthorized packages.
-* [x] **No Lombok Constraint:** 100% clean, standard, hand-written constructors, getters, setters, and builder patterns.
-* [x] **Zero Unused Imports:** Verified 0 unused import statements across all 46 production and test `.java` files.
-* [x] **Zero-Crash Resilience Guarantee:** External API failures, missing LLM keys, and network timeouts fail gracefully to offline deterministic algorithms.
-* [x] **Multi-Industry Scope:** Comprehensive support for Technology, Marketing, Legal, Operations, Finance, and Healthcare sectors.
-* [x] **Multi-Source Job Scraper:** Scheduled background ingestion and manual web trigger across JobTech Nordics, Remotive, and Arbeitnow.
-* [x] **Two-Tier Matching Algorithm:** Objective 0–100 scoring based on 40% explicit candidate preferences and 60% verifiable profile evidence.
-* [x] **AI Resume & Cover Letter Tailoring:** Live LLM integration via `RestClient` with deterministic offline fallback for grading reliability.
-* [x] **Binary PDF Streaming:** Direct binary generation of ATS CVs and business cover letters via OpenPDF.
-* [x] **User Authentication & Session Management:** PBKDF2 salted password encryption, registration with immediate specialization choice, and protected session flow.
-* [x] **Interactive Dashboard:** Executive overview of saved application kits, match quality metrics, and quick action shortcuts.
-* [x] **110 Automated Tests:** 100% passing test suite across unit, repository slice (`@DataJpaTest`), web controller slice (`MockMvc`), and full integration (`@SpringBootTest`).
-
----
-
-## 10. Authors & Acknowledgements
+## 9. Authors & Acknowledgements
 
 * **Author:** Toluwalase Ayoola
 * **Course:** Backend / Full-Stack Enterprise Application Development
