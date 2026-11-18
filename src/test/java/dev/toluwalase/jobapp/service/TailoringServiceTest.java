@@ -282,5 +282,19 @@ public class TailoringServiceTest {
         assertEquals("Customized Letter Content", updated.getTailoredCoverLetterContent());
         verify(kitRepository).save(existingKit);
     }
+
+    @Test
+    @DisplayName("getKitsForUser returns kits ordered by updated date or empty list when user id is null")
+    void testGetKitsForUser() {
+        ApplicationKit kit1 = new ApplicationKit(testUser, testJob, 90, "Match", "CV", "Letter", "FINALIZED");
+        when(kitRepository.findByUserIdOrderByUpdatedAtDesc(1L)).thenReturn(List.of(kit1));
+
+        List<ApplicationKit> result = tailoringService.getKitsForUser(1L);
+        assertEquals(1, result.size());
+        assertEquals("FINALIZED", result.get(0).getStatus());
+
+        List<ApplicationKit> nullUserResult = tailoringService.getKitsForUser(null);
+        assertTrue(nullUserResult.isEmpty());
+    }
 }
 

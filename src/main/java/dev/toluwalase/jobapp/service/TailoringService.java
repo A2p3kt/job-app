@@ -204,6 +204,20 @@ public class TailoringService {
     }
 
     /**
+     * Retrieves all application kits created by a candidate, ordered by most recently updated.
+     *
+     * @param userId Primary key of the candidate AppUser
+     * @return List of ApplicationKit entities
+     */
+    @Transactional(readOnly = true)
+    public List<ApplicationKit> getKitsForUser(Long userId) {
+        if (userId == null) {
+            return Collections.emptyList();
+        }
+        return kitRepository.findByUserIdOrderByUpdatedAtDesc(userId);
+    }
+
+    /**
      * Invokes the Google Gemini API to generate customized application materials.
      * Tries candidate models (primary model, gemini-3.1-flash-lite,
      * gemini-3.8-flash)
