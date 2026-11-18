@@ -84,7 +84,7 @@ public class AuthWebControllerTest {
     }
 
     @Test
-    @DisplayName("POST /signin with valid credentials sets session and redirects to /profile")
+    @DisplayName("POST /signin with valid credentials sets session and redirects to /dashboard")
     void testProcessSignInSuccess() throws Exception {
         when(userRepository.findByUsername("tolu")).thenReturn(Optional.of(existingUser));
 
@@ -92,12 +92,12 @@ public class AuthWebControllerTest {
                         .param("username", "tolu")
                         .param("password", "secret123"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profile"))
+                .andExpect(redirectedUrl("/dashboard"))
                 .andExpect(flash().attributeExists("successMessage"));
     }
 
     @Test
-    @DisplayName("POST /signin with valid email sets session and redirects to /profile")
+    @DisplayName("POST /signin with valid email sets session and redirects to /dashboard")
     void testProcessSignInWithEmailSuccess() throws Exception {
         when(userRepository.findByUsername("tolu@example.com")).thenReturn(Optional.empty());
         when(userRepository.findByEmail("tolu@example.com")).thenReturn(Optional.of(existingUser));
@@ -106,7 +106,7 @@ public class AuthWebControllerTest {
                         .param("username", "tolu@example.com")
                         .param("password", "secret123"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profile"))
+                .andExpect(redirectedUrl("/dashboard"))
                 .andExpect(flash().attributeExists("successMessage"));
     }
 

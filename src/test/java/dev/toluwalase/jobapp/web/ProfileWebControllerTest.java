@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
@@ -73,11 +74,22 @@ public class ProfileWebControllerTest {
     }
 
     @Test
-    @DisplayName("GET / redirects to /profile")
-    void testIndexRedirectsToProfile() throws Exception {
+    @DisplayName("GET / redirects to /signin when unauthenticated")
+    void testIndexRedirectsToSignInWhenUnauthenticated() throws Exception {
         mockMvc.perform(get("/"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profile"));
+                .andExpect(redirectedUrl("/signin"));
+    }
+
+    @Test
+    @DisplayName("GET / redirects to /dashboard when authenticated in session")
+    void testIndexRedirectsToDashboardWhenAuthenticated() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute("username", "tolu");
+
+        mockMvc.perform(get("/").session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/dashboard"));
     }
 
     @Test

@@ -43,13 +43,22 @@ public class ProfileWebController {
     }
 
     /**
-     * Redirects the root path to the profile view during development.
+     * Handles root URL requests.
+     * If the user is authenticated in the current session, redirects to the dashboard (/dashboard).
+     * If visiting for the first time without an active session, redirects to sign-in (/signin).
      *
-     * @return Redirect to /profile
+     * @param principal Current user principal
+     * @param session   Current HTTP session
+     * @return Redirect to /dashboard if authenticated, otherwise /signin
      */
     @GetMapping("/")
-    public String index() {
-        return "redirect:/profile";
+    public String index(Principal principal, HttpSession session) {
+        boolean isAuthenticated = (principal != null && principal.getName() != null && !principal.getName().isBlank())
+                || (session != null && session.getAttribute("username") != null);
+        if (isAuthenticated) {
+            return "redirect:/dashboard";
+        }
+        return "redirect:/signin";
     }
 
     private String resolveUsername(Principal principal, HttpSession session) {

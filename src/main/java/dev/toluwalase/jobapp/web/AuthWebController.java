@@ -81,8 +81,8 @@ public class AuthWebController {
 
         log.info("User '{}' signed in successfully.", user.getUsername());
         redirectAttributes.addFlashAttribute("successMessage",
-                "Welcome back, " + user.getUsername() + "! Review your CV details below or proceed to your dashboard.");
-        return "redirect:/profile";
+                "Welcome back, " + user.getUsername() + "!");
+        return "redirect:/dashboard";
     }
 
     /**
