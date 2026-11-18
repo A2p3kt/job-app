@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Dashboard | JobApp</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-8">
+                <a href="/dashboard" class="flex items-center space-x-2 group">
+                    <div class="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:bg-indigo-700 transition-all duration-200">
+                        JA
+                    </div>
+                    <span class="font-bold text-xl text-slate-900 tracking-tight">JobApp</span>
+                </a>
+                <nav class="hidden md:flex space-x-1">
+                    <a href="/dashboard" class="px-3 py-2 rounded-md text-sm font-semibold text-indigo-600 bg-indigo-50 transition-all duration-150">
+                        Dashboard
+                    </a>
+                    <a href="/jobs" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-150">
+                        Job Board
+                    </a>
+                    <a href="/profile" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all duration-150">
+                        Master CV & Profile
+                    </a>
+                </nav>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span th:if="${profile.specialization}" class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200" th:text="${profile.specialization.displayName}">
+                    Technology & IT
+                </span>
+                <div class="flex items-center space-x-2 bg-slate-100 py-1.5 px-3 rounded-full text-xs font-medium text-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span th:text="${user != null ? user.username : 'demo-user'}">tolu</span>
+                </div>
+                <a th:if="${session.username != null}" href="/signout" class="text-xs font-medium text-slate-500 hover:text-rose-600 px-2 py-1 rounded transition-colors duration-150">
+                    Sign Out
+                </a>
+                <div th:unless="${session.username != null}" class="hidden sm:flex items-center space-x-1.5">
+                    <a href="/signin" class="text-xs font-medium text-slate-600 hover:text-indigo-600 px-2.5 py-1 rounded-md hover:bg-slate-100 transition">
+                        Sign In
+                    </a>
+                    <a href="/signup" class="text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1 rounded-md transition shadow-xs">
+                        Sign Up
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Dashboard Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Flash Feedback Messages -->
+        <div th:if="${successMessage}" class="mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-between shadow-xs transition-all duration-300">
+            <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                <span class="text-sm font-medium" th:text="${successMessage}">Operation successful!</span>
+            </div>
+        </div>
+
+        <div th:if="${errorMessage}" class="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between shadow-xs transition-all duration-300">
+            <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-rose-600 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                <span class="text-sm font-medium" th:text="${errorMessage}">An error occurred.</span>
+            </div>
+        </div>
+
+        <!-- Hero / Candidate Overview Card -->
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-sm mb-8 transition-all duration-300 hover:shadow-md">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div class="space-y-2">
+                    <div class="flex items-center space-x-3">
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight"
+                            th:text="${profile.fullName != null && !profile.fullName.isBlank() ? 'Welcome back, ' + profile.fullName + '!' : 'Welcome to Your Dashboard!'}">
+                            Welcome back, Toluwalase Ayoola!
+                        </h1>
+                    </div>
+                    <p class="text-base font-semibold text-indigo-600" th:text="${profile.headline}">
+                        Lead Cloud Architect & Senior Distributed Systems Engineer
+                    </p>
+                    <p class="text-sm text-slate-600 max-w-3xl line-clamp-2" th:text="${profile.summary}">
+                        Pragmatic, results-driven software engineer with 6+ years of experience architecting high-throughput distributed microservices.
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3 shrink-0">
+                    <a href="/jobs" class="inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow transition-all duration-200 space-x-2 hover:-translate-y-0.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <span>Find Matching Jobs</span>
+                    </a>
+                    <a href="/profile" class="inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-300 hover:bg-slate-100 hover:border-slate-400 shadow-xs transition-all duration-200 space-x-2 hover:-translate-y-0.5">
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        <span>Edit Master CV</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4 Stat Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+            <!-- Metric 1: Saved Application Kits -->
+            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Saved Applications</p>
+                        <p class="text-3xl font-extrabold text-slate-900 mt-1" th:text="${totalKits}">2</p>
+                    </div>
+                    <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-slate-500">
+                    <span class="font-medium text-emerald-600" th:text="${finalizedKits} + ' finalized'">1 finalized</span>
+                    <span class="mx-1.5">&bull;</span>
+                    <span th:text="${draftKits} + ' in draft'">1 in draft</span>
+                </div>
+            </div>
+
+            <!-- Metric 2: Avg Fit Score -->
+            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Avg. Match Score</p>
+                        <p class="text-3xl font-extrabold text-slate-900 mt-1" th:text="${avgMatchScore} + '%'">94%</p>
+                    </div>
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-slate-500">
+                    <span>Highest fit:</span>
+                    <span class="ml-1 font-semibold text-emerald-600" th:text="${highestMatchScore} + '%'">96%</span>
+                </div>
+            </div>
+
+            <!-- Metric 3: Active Job Postings -->
+            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Market Positions</p>
+                        <p class="text-3xl font-extrabold text-slate-900 mt-1" th:text="${totalJobsAvailable}">7</p>
+                    </div>
+                    <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-slate-500">
+                    <span>Live scraped opportunities</span>
+                </div>
+            </div>
+
+            <!-- Metric 4: Career Specialization -->
+            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Specialization</p>
+                        <p class="text-lg font-bold text-slate-900 mt-1 truncate max-w-[160px]"
+                           th:text="${profile.specialization != null ? profile.specialization.displayName : 'General'}">
+                            Technology & IT
+                        </p>
+                    </div>
+                    <div class="p-3 bg-purple-50 text-purple-600 rounded-xl">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-slate-500 truncate">
+                    <span th:text="${profile.preferredLocations != null && !profile.preferredLocations.isBlank() ? profile.preferredLocations : 'Remote / Hybrid'}">
+                        Helsinki, Espoo, Remote
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Saved Application Kits Section -->
+        <div class="space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 tracking-tight">Saved Application Materials</h2>
+                    <p class="text-sm text-slate-500 mt-0.5">
+                        Overview of jobs you've generated tailored CVs and cover letters for.
+                    </p>
+                </div>
+                <a href="/jobs" class="inline-flex items-center space-x-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition">
+                    <span>Browse More Opportunities</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </a>
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${#lists.isEmpty(kits)}" class="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
+                <div class="mx-auto w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900">No Application Kits Generated Yet</h3>
+                <p class="text-sm text-slate-500 max-w-md mx-auto mt-1 mb-6">
+                    Head over to the Job Board to discover live jobs matched to your background, then generate on-demand tailored CVs and cover letters with one click.
+                </p>
+                <a href="/jobs" class="inline-flex items-center px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm hover:shadow transition-all duration-200 space-x-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <span>Explore Matched Jobs</span>
+                </a>
+            </div>
+
+            <!-- Populated Applications List -->
+            <div th:unless="${#lists.isEmpty(kits)}" class="space-y-4">
+                <div th:each="kit : ${kits}" class="bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-xs hover:shadow-md hover:border-slate-300 transition-all duration-300">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                        <!-- Job & Match Info -->
+                        <div class="space-y-2 flex-1">
+                            <div class="flex flex-wrap items-center gap-2.5">
+                                <h3 class="text-lg font-bold text-slate-900 hover:text-indigo-600 transition" th:text="${kit.jobPosting.title}">
+                                    Junior Backend Developer
+                                </h3>
+                                <!-- Match Score Badge -->
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                      th:classappend="${kit.matchScore >= 85} ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : (${kit.matchScore >= 70} ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-amber-50 text-amber-700 border border-amber-200')"
+                                      th:text="${kit.matchScore} + '% Match'">
+                                    96% Match
+                                </span>
+                                <!-- Status Badge -->
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                                      th:classappend="${kit.status == 'FINALIZED'} ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                      th:text="${kit.status}">
+                                    FINALIZED
+                                </span>
+                                <!-- Category Badge -->
+                                <span class="text-xs font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600"
+                                      th:text="${kit.jobPosting.category != null ? kit.jobPosting.category.displayName : 'General'}">
+                                    Technology
+                                </span>
+                            </div>
+
+                            <div class="flex flex-wrap items-center text-xs text-slate-500 gap-y-1 gap-x-4">
+                                <span class="flex items-center font-medium text-slate-700">
+                                    <svg class="w-3.5 h-3.5 mr-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                    <span th:text="${kit.jobPosting.company}">Nordic Financial Technologies</span>
+                                </span>
+                                <span class="flex items-center">
+                                    <svg class="w-3.5 h-3.5 mr-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    <span th:text="${kit.jobPosting.location}">Helsinki, Finland</span>
+                                </span>
+                                <span th:if="${kit.updatedAt != null}" class="text-slate-400">
+                                    Last tailored: <span th:text="${#temporals.format(kit.updatedAt, 'yyyy-MM-dd HH:mm')}">2026-11-18 14:00</span>
+                                </span>
+                            </div>
+
+                            <p th:if="${kit.matchReasons != null}" class="text-xs text-slate-500 italic line-clamp-1" th:text="${kit.matchReasons}">
+                                Exceptional alignment with Java 21 and Spring Boot stack.
+                            </p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                            <a th:href="@{'/kits/' + ${kit.id} + '/edit'}"
+                               class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 transition-all duration-200 space-x-1.5 shadow-2xs">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                <span>Edit Draft</span>
+                            </a>
+                            <a th:href="@{'/kits/' + ${kit.id} + '/pdf/cv'}"
+                               class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-all duration-200 space-x-1.5 shadow-2xs">
+                                <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <span>CV PDF</span>
+                            </a>
+                            <a th:href="@{'/kits/' + ${kit.id} + '/pdf/cover-letter'}"
+                               class="inline-flex items-center px-3.5 py-2 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-all duration-200 space-x-1.5 shadow-2xs">
+                                <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <span>Cover Letter PDF</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Master Profile Snapshot Card -->
+        <div class="mt-12 bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900">Master CV & Career Profile Summary</h3>
+                    <p class="text-xs text-slate-500">Your single source of truth used for AI-driven CV and cover letter tailoring.</p>
+                </div>
+                <a href="/profile" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition">
+                    Manage Full Portfolio &rarr;
+                </a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-100 text-xs">
+                <div>
+                    <span class="text-slate-400 block font-medium">Contact:</span>
+                    <span class="text-slate-700 font-semibold" th:text="${profile.user != null ? profile.user.email : 'hello@toluwalase.dev'}">hello@toluwalase.dev</span>
+                    <span class="text-slate-500 block" th:text="${profile.phoneNumber}">+358 40 123 4567</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block font-medium">Target Locations:</span>
+                    <span class="text-slate-700 font-semibold" th:text="${profile.preferredLocations != null ? profile.preferredLocations : 'Remote / Hybrid'}">Helsinki, Espoo, Remote</span>
+                </div>
+                <div>
+                    <span class="text-slate-400 block font-medium">Core Skills:</span>
+                    <span class="text-slate-700 font-semibold line-clamp-2" th:text="${profile.skillsList != null ? profile.skillsList : 'Java, Spring Boot, Docker, Kubernetes'}">
+                        Java 21, Spring Boot 4, Kubernetes, AWS, PostgreSQL
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+            <p>&copy; 2026 JobApp — Intelligent Multi-Industry Career Acceleration Platform.</p>
+            <div class="flex items-center space-x-4">
+                <a href="/dashboard" class="hover:text-slate-800 transition">Dashboard</a>
+                <a href="/jobs" class="hover:text-slate-800 transition">Job Board</a>
+                <a href="/profile" class="hover:text-slate-800 transition">Master CV</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
