@@ -3,6 +3,11 @@ name: Test and Deploy to Rahti
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+        - '**.md'
+        - 'docs/**'
+        - '.gitignore'
+        - 'LICENSE'
 
 jobs:
   test-and-deploy:
